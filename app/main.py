@@ -2,8 +2,39 @@ from fastapi import FastAPI, Depends, HTTPException
 from . import auth, crud, schemas
 from .models import UserModel
 from datetime import timedelta
+import os
+from dotenv import load_dotenv
+from datetime import datetime, timezone
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI()
+
+# Create initial admin user on startup if it doesn't exist
+@app.on_event("startup")
+async def create_initial_admin():
+    admin_email = os.getenv("INITIAL_ADMIN_EMAIL")
+    admin_password = os.getenv("INITIAL_ADMIN_PASSWORD")
+    
+    if admin_email and admin_password:
+        existing_user = crud.get_user_by_email(admin_email)
+        if not existing_user:
+            hashed_password = auth.get_password_hash(admin_password)
+            user_model = UserModel(
+                email=admin_email,
+                hashed_password=hashed_password,
+                is_active=True,
+                is_admin=True,
+                created_at=datetime.now(timezone.utc)
+            )
+            crud.create_user(user_model)
+            print(f"Initial admin user created with email: {admin_email}")
+        else:
+            # Ensure the user has admin privileges
+            if not existing_user.is_admin or not existing_user.is_active:
+                crud.update_user(str(existing_user.id), {"is_admin": True, "is_active": True})
+                print(f"Updated user {admin_email} to have admin privileges")
 
 @app.get("/healthcheck")
 def healthcheck():
@@ -18,7 +49,10 @@ def register_user(user: schemas.UserCreate):
     hashed_password = auth.get_password_hash(user.password)
     user_model = UserModel(
         email=user.email,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        is_active=True,
+        is_admin=False,
+        created_at=datetime.now(timezone.utc)
     )
     return crud.create_user(user_model)
 

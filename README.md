@@ -97,7 +97,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"email": "testuser@example
 curl -X GET -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjZlNmFhNjA2MTBiZmVkOGNlZDY1MSIsImV4cCI6MTc0NDIzNjE4Mn0.Ej90XGZoYY7efjnpoWUyiaUxhEHuZQJncmHcywYX6wE" http://localhost:8000/users/me
 
 # List all users (admin only)
-curl -X GET -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjZlNmFhNjA2MTBiZmVkOGNlZDY1MSIsImV4cCI6MTc0NDIzNjE4Mn0.Ej90XGZoYY7efjnpoWUyiaUxhEHuZQJncmHcywYX6wE" http://localhost:8000/admin/users
+curl -X GET -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjZmYWI3ZTY4ZjdjZGRkNTIyMjExOCIsImV4cCI6MTc0NDI0MjUxM30.nefRzouWXtL0amyrbxquRwIvV1VyWQJJcLC_YBouFGY" http://localhost:8000/admin/users
 ```
 
 
