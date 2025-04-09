@@ -1,0 +1,22 @@
+graph TD
+    U[End Users] --> WC[Web Clients]
+    WC[Web Clients<br/>React & Angular] --> API[Blog API Service]
+    
+    MO[Mobile App<br/>Future] -.-> API
+    
+    API --> DB[(PostgreSQL Database)]
+    API --> IS[Image Storage<br/>S3-compatible]
+    
+    API --> LS[Logging Service]
+    
+    subgraph Key User Types
+        AU[Anonymous Users<br/>Read-only]
+        RU[Registered Users<br/>Authors]
+        AD[Admin Users]
+    end
+    
+    style API fill:#f9f,stroke:#333,stroke-width:2
+    style WC fill:#bbf,stroke:#333,stroke-width:1
+    style MO fill:#ddd,stroke:#333,stroke-width:1,stroke-dasharray: 5 5
+    style DB fill:#bfb,stroke:#333,stroke-width:1
+    style IS fill:#bfb,stroke:#333,stroke-width:1

@@ -1,10 +1,20 @@
-from typing import List, Optional
-from pydantic import BaseModel, EmailStr, Field
-from datetime import datetime, timezone
+from typing import List, Optional, Any
+from pydantic import BaseModel, EmailStr, Field, BeforeValidator
+from datetime import datetime
+from typing_extensions import Annotated
+from bson.objectid import ObjectId
+
+# Define a callable function to convert ObjectId to string
+def object_id_to_str(v: Any) -> str:
+    if isinstance(v, ObjectId):
+        return str(v)
+    return v
+
+# Use Annotated for the id field with BeforeValidator
+ObjectIdStr = Annotated[str, BeforeValidator(object_id_to_str)]
 
 class UserModel(BaseModel):
-    id: Optional[str] = Field(None, alias='_id')
-    username: str
+    id: Optional[ObjectIdStr] = Field(None, alias='_id')
     email: EmailStr
     hashed_password: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -13,14 +23,14 @@ class UserModel(BaseModel):
     tokens: List[str] = []
 
 class PostModel(BaseModel):
-    id: Optional[str] = Field(None, alias='_id')
+    id: Optional[ObjectIdStr] = Field(None, alias='_id')
     title: str
     content: str
     author_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class CommentModel(BaseModel):
-    id: Optional[str] = Field(None, alias='_id')
+    id: Optional[ObjectIdStr] = Field(None, alias='_id')
     post_id: str
     author_id: str
     content: str

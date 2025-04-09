@@ -80,7 +80,26 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 ### Running Tests
 ```
 pytest
+pytest --cov=app
+pytest --cov=app --cov-report=html
+pytest -v
 ```
+
+### Testing endpoints with curl
+```bash
+# Register a new user
+curl -X POST -H "Content-Type: application/json" -d '{ "email": "testuser@example.com", "password": "testpassword"}' http://localhost:8000/users/register
+
+# Login and get an access token
+curl -X POST -H "Content-Type: application/json" -d '{"email": "testuser@example.com", "password": "testpassword"}' http://localhost:8000/auth/login
+
+# Get current user information
+curl -X GET -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjZlNmFhNjA2MTBiZmVkOGNlZDY1MSIsImV4cCI6MTc0NDIzNjE4Mn0.Ej90XGZoYY7efjnpoWUyiaUxhEHuZQJncmHcywYX6wE" http://localhost:8000/users/me
+
+# List all users (admin only)
+curl -X GET -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjZlNmFhNjA2MTBiZmVkOGNlZDY1MSIsImV4cCI6MTc0NDIzNjE4Mn0.Ej90XGZoYY7efjnpoWUyiaUxhEHuZQJncmHcywYX6wE" http://localhost:8000/admin/users
+```
+
 
 ### API Documentation
 When the application is running, you can access:

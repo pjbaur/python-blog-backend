@@ -4,7 +4,6 @@ from datetime import datetime
 
 # User Schemas
 class UserBase(BaseModel):
-    username: str
     email: EmailStr
 
 class UserCreate(UserBase):
@@ -17,6 +16,11 @@ class UserResponse(UserBase):
 
     class Config:
         orm_mode = True
+
+# Login Schema
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 # Token Schemas
 class Token(BaseModel):

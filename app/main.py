@@ -1,7 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException
 from . import auth, crud, schemas
 from .models import UserModel
-from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 
 app = FastAPI()
@@ -18,7 +17,6 @@ def register_user(user: schemas.UserCreate):
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed_password = auth.get_password_hash(user.password)
     user_model = UserModel(
-        username=user.username,
         email=user.email,
         hashed_password=hashed_password
     )
@@ -26,8 +24,9 @@ def register_user(user: schemas.UserCreate):
 
 # User Login
 @app.post("/auth/login", response_model=schemas.Token)
-def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = auth.authenticate_user(form_data.username, form_data.password)
+def login_user(login_data: schemas.LoginRequest):
+
+    user = auth.authenticate_user(login_data.email, login_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)

@@ -5,9 +5,14 @@ from bson.objectid import ObjectId
 users_collection = db['users']
 
 def create_user(user: UserModel):
-    user_dict = user.dict(by_alias=True)
+    # Convert to dict but exclude_unset to avoid sending null _id
+    user_dict = user.dict(by_alias=True, exclude_unset=True)
+    # Explicitly remove _id if it's None to let MongoDB generate it
+    if "_id" in user_dict and user_dict["_id"] is None:
+        del user_dict["_id"]
     insert_result = users_collection.insert_one(user_dict)
     user.id = str(insert_result.inserted_id)
+    print(f"User created with ID: {user.id}")
     return user
 
 def get_user_by_email(email: str):

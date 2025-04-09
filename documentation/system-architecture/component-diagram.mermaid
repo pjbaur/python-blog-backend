@@ -1,0 +1,39 @@
+graph TD
+    Client[Client Applications] --> API[API Gateway Layer]
+    
+    subgraph "Blog API Service"
+        API --> Auth[Authentication & Authorization]
+        API --> PM[Post Management]
+        API --> CM[Comment Management]
+        API --> UM[User Management]
+        API --> SM[Search Management]
+        
+        Auth --> TokenService[JWT Token Service]
+        
+        PM --> ImageHandler[Image Handler]
+        PM --> TagsHandler[Tags & Categories Handler]
+        
+        SM --> DBSearch[Database Search]
+    end
+    
+    Auth --> DB[(PostgreSQL)]
+    PM --> DB
+    CM --> DB
+    UM --> DB
+    SM --> DB
+    
+    ImageHandler --> IS[Image Storage<br/>S3-compatible]
+    
+    PM -.-> Logger[Logging Service]
+    CM -.-> Logger
+    Auth -.-> Logger
+    API -.-> Logger
+    
+    style API fill:#f9f,stroke:#333,stroke-width:2
+    style Auth fill:#bbf,stroke:#333,stroke-width:1
+    style PM fill:#bbf,stroke:#333,stroke-width:1
+    style CM fill:#bbf,stroke:#333,stroke-width:1
+    style UM fill:#bbf,stroke:#333,stroke-width:1
+    style SM fill:#bbf,stroke:#333,stroke-width:1
+    style DB fill:#bfb,stroke:#333,stroke-width:1
+    style IS fill:#bfb,stroke:#333,stroke-width:1

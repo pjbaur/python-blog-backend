@@ -4,9 +4,9 @@ TODO: Where was this generated?
 ## 1. System Context Diagram
 ```mermaid
 graph TD
-    A[React Frontend] --> B[Flask API]
+    A[React Frontend] --> B[FastAPI Backend]
     B --> C[MongoDB]
-    B --> D[Auth Service]
+    B --> D[JWT Auth]
     C --> E[(Posts Collection)]
     C --> F[(Users Collection)]
     C --> G[(Comments Collection)]
@@ -19,9 +19,14 @@ graph TD
 - **Rationale**: Better suited for blog content with varying post formats
 - **Consequences**: Requires denormalization for relationships
 
-### ADR-002: JWT Authentication
-- **Decision**: JSON Web Tokens for stateless auth
-- **Rationale**: Scalability and decoupled services
+### ADR-002: JWT Authentication with python-jose
+- **Decision**: JSON Web Tokens for stateless auth implemented with python-jose
+- **Rationale**: Scalability and decoupled services with secure token management
+
+### ADR-003: FastAPI Framework
+- **Decision**: Use FastAPI instead of Flask or Django
+- **Rationale**: Modern Python framework with built-in OpenAPI documentation, async support, and type checking
+- **Consequences**: Better performance and developer experience
 ```
 
 ## 3. API Specifications (OpenAPI 3.0)

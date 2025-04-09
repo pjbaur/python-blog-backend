@@ -1,0 +1,77 @@
+erDiagram
+    USERS {
+        int id PK
+        string email
+        string password_hash
+        datetime created_at
+        datetime updated_at
+        string role "ADMIN or AUTHOR"
+        boolean is_active
+    }
+    
+    POSTS {
+        int id PK
+        int author_id FK
+        string title
+        text content
+        datetime created_at
+        datetime updated_at
+        boolean is_published
+    }
+    
+    COMMENTS {
+        int id PK
+        int post_id FK
+        int author_id FK
+        int parent_comment_id FK "NULL for top-level comments"
+        text content
+        datetime created_at
+        datetime updated_at
+    }
+    
+    CATEGORIES {
+        int id PK
+        string name
+        string description
+    }
+    
+    POST_CATEGORIES {
+        int post_id FK
+        int category_id FK
+    }
+    
+    HASHTAGS {
+        int id PK
+        string name
+    }
+    
+    POST_HASHTAGS {
+        int post_id FK
+        int hashtag_id FK
+    }
+    
+    IMAGES {
+        int id PK
+        int post_id FK
+        string filename
+        string s3_key
+        string content_type
+        datetime created_at
+    }
+    
+    TOKEN_BLACKLIST {
+        int id PK
+        string jti "JWT ID"
+        datetime created_at
+        datetime expires_at
+    }
+    
+    USERS ||--o{ POSTS : creates
+    USERS ||--o{ COMMENTS : writes
+    POSTS ||--o{ COMMENTS : contains
+    COMMENTS ||--o{ COMMENTS : parent_of
+    POSTS ||--o{ POST_CATEGORIES : categorized_in
+    CATEGORIES ||--o{ POST_CATEGORIES : categorizes
+    POSTS ||--o{ POST_HASHTAGS : tagged_with
+    HASHTAGS ||--o{ POST_HASHTAGS : tags
+    POSTS ||--o{ IMAGES : contains
