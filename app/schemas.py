@@ -9,10 +9,16 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+# Token Info Schema
+class TokenInfo(BaseModel):
+    token: str
+    expires_at: datetime
+
 class UserResponse(UserBase):
     id: str
     is_active: bool
     is_admin: bool
+    tokens: Optional[List[TokenInfo]] = None
 
     class Config:
         orm_mode = True
