@@ -5,17 +5,27 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 from .routes import router
+from .logger import setup_logging, get_logger
 
 # Load environment variables
 load_dotenv()
+
+# Set up logging
+logger = get_logger(__name__)
 
 app = FastAPI()
 
 # Include the router
 app.include_router(router)
 
-# Create initial admin user on startup if it doesn't exist
+# Initialize logging on startup
 @app.on_event("startup")
+async def startup_event():
+    setup_logging()
+    logger.info("Application startup: Initializing logging")
+    await create_initial_admin()
+
+# Create initial admin user on startup if it doesn't exist
 async def create_initial_admin():
     admin_email = os.getenv("INITIAL_ADMIN_EMAIL")
     admin_password = os.getenv("INITIAL_ADMIN_PASSWORD")
@@ -32,11 +42,13 @@ async def create_initial_admin():
                 created_at=datetime.now(timezone.utc)
             )
             crud.create_user(user_model)
-            print(f"Initial admin user created with email: {admin_email}")
+            logger.info(f"Initial admin user created with email: {admin_email}")
         else:
             # Ensure the user has admin privileges
             if not existing_user.is_admin or not existing_user.is_active:
                 crud.update_user(str(existing_user.id), {"is_admin": True, "is_active": True})
-                print(f"Updated user {admin_email} to have admin privileges")
+                logger.info(f"Updated user {admin_email} to have admin privileges")
+    else:
+        logger.warning("Admin credentials not provided in environment variables")
 
 # Additional routes for posts and comments would go here...
