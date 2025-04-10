@@ -6,24 +6,13 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 from .routes import router
 from .logger import setup_logging, get_logger
+from contextlib import asynccontextmanager
 
 # Load environment variables
 load_dotenv()
 
 # Set up logging
 logger = get_logger(__name__)
-
-app = FastAPI()
-
-# Include the router
-app.include_router(router)
-
-# Initialize logging on startup
-@app.on_event("startup")
-async def startup_event():
-    setup_logging()
-    logger.info("Application startup: Initializing logging")
-    await create_initial_admin()
 
 # Create initial admin user on startup if it doesn't exist
 async def create_initial_admin():
@@ -50,5 +39,22 @@ async def create_initial_admin():
                 logger.info(f"Updated user {admin_email} to have admin privileges")
     else:
         logger.warning("Admin credentials not provided in environment variables")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialization code (before serving requests)
+    setup_logging()
+    logger.info("Application startup: Initializing logging")
+    await create_initial_admin()
+    
+    yield  # This is where the application serves requests
+    
+    # Cleanup code (after serving requests, before shutdown)
+    logger.info("Application shutdown")
+
+app = FastAPI(lifespan=lifespan)
+
+# Include the router
+app.include_router(router)
 
 # Additional routes for posts and comments would go here...
