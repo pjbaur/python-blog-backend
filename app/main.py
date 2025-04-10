@@ -56,5 +56,3 @@ app = FastAPI(lifespan=lifespan)
 
 # Include the router
 app.include_router(router)
-
-# Additional routes for posts and comments would go here...

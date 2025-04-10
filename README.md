@@ -90,16 +90,24 @@ pytest -v
 # Register a new user
 curl -X POST -H "Content-Type: application/json" -d '{ "email": "testuser@example.com", "password": "testpassword"}' http://localhost:8000/users/register
 
-# Login and get an access token
+# Log in and get an access token
 curl -X POST -H "Content-Type: application/json" -d '{"email": "testuser@example.com", "password": "testpassword"}' http://localhost:8000/auth/login
 
+# Log in, get an access token, and store the token in an environment variable
+TOKEN=$(curl -X POST -H "Content-Type: application/json" -d '{"email": "testuser@example.com", "password": "testpassword"}' http://localhost:8000/auth/login | jq -r '.access_token')
+
 # Get current user information
-curl -X GET -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjZlNmFhNjA2MTBiZmVkOGNlZDY1MSIsImV4cCI6MTc0NDIzNjE4Mn0.Ej90XGZoYY7efjnpoWUyiaUxhEHuZQJncmHcywYX6wE" http://localhost:8000/users/me
+curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:8000/users/me
 
 # List all users (admin only)
-curl -X GET -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjZmYWI3ZTY4ZjdjZGRkNTIyMjExOCIsImV4cCI6MTc0NDI0MjUxM30.nefRzouWXtL0amyrbxquRwIvV1VyWQJJcLC_YBouFGY" http://localhost:8000/admin/users
-```
+curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:8000/admin/users
 
+# Create a new blog post
+curl -X POST -H "Content-Type: application/json" -d '{"title": "New Blog Post", "content": "This is the content of the new blog post."}' -H "Authorization: Bearer $TOKEN" http://localhost:8000/posts
+
+# List all posts
+curl -X GET http://localhost:8000/posts
+```
 
 ### API Documentation
 When the application is running, you can access:
@@ -115,6 +123,7 @@ python-blog-backend/
 │   ├── auth.py          # Authentication logic
 │   ├── crud.py          # Database operations
 │   ├── database.py      # Database connection
+│   ├── logger.py        # Logging configuration
 │   ├── models.py        # Data models
 │   ├── routes.py        # API endpoints
 │   ├── schemas.py       # Pydantic schemas
