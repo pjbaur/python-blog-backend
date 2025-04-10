@@ -2,12 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from . import auth, crud, schemas
 from .models import UserModel, PostModel
 from datetime import timedelta, datetime, timezone
-import os
 from .logger import get_logger
-from typing import List, Optional
-
-# Make sure we have access to JWTError
-from .auth import JWTError
+from typing import List
 
 # Set up logger
 logger = get_logger(__name__)
