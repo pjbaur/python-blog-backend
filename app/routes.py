@@ -28,7 +28,8 @@ def register_user(user: schemas.UserCreate):
         hashed_password=hashed_password,
         is_active=True,
         is_admin=False,
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
     new_user = crud.create_user(user_model)
     logger.info(f"User registered successfully: {user.email}")
@@ -106,7 +107,8 @@ async def create_post(
         title=post_data.title,
         content=post_data.content,
         author_id=str(current_user.id),
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
     # Save to database
     created_post = crud.create_post(post)
@@ -162,7 +164,8 @@ async def update_post(
     # Update post
     updates = {
         "title": post_data.title,
-        "content": post_data.content
+        "content": post_data.content,
+        "updated_at": datetime.now(timezone.utc)
     }
     crud.update_post(post_id, updates)
     

@@ -116,6 +116,7 @@ python-blog-backend/
 │   ├── crud.py          # Database operations
 │   ├── database.py      # Database connection
 │   ├── models.py        # Data models
+│   ├── routes.py        # API endpoints
 │   ├── schemas.py       # Pydantic schemas
 │   └── tests/           # Test directory
 │       ├── __init__.py
