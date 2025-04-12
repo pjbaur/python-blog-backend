@@ -43,6 +43,7 @@ class LoginRequest(BaseModel):
 # Token Schemas
 class Token(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str
 
 class RefreshTokenRequest(BaseModel):

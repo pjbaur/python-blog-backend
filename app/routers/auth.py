@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from .. import auth, crud, schemas
 from ..models import UserModel
 from datetime import timedelta, datetime, timezone
@@ -41,23 +41,61 @@ def login_user(login_data: schemas.LoginRequest):
     if not user:
         logger.warning(f"Login failed: Incorrect credentials for {login_data.email}")
         raise HTTPException(status_code=400, detail="Incorrect email or password")
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
-        data={"id": str(user.id)}, expires_delta=access_token_expires
+    
+    # Create both access and refresh tokens
+    access_token, refresh_token = auth.create_token_pair(
+        data={"id": str(user.id)}
     )
+    
     logger.info(f"Login successful for user: {login_data.email}")
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
-# TODO: Implement refresh token endpoint as specified in API doc
+# Implement refresh token endpoint
 @router.post("/refresh", response_model=schemas.Token)
 def refresh_token(refresh_data: schemas.RefreshTokenRequest):
-    # This is a placeholder - you'll need to implement token refresh logic
     logger.info("Token refresh requested")
-    raise HTTPException(status_code=501, detail="Token refresh not yet implemented")
+    
+    # Verify the refresh token
+    payload = auth.verify_token(refresh_data.refresh_token, token_type="refresh")
+    if not payload:
+        logger.warning("Refresh token validation failed")
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    
+    user_id = payload.get("id")
+    
+    # Check if user exists
+    user = crud.get_user_by_id(user_id)
+    if not user:
+        logger.warning(f"User not found for refresh token, ID: {user_id}")
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Generate new access token
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_access_token = auth.create_access_token(
+        data={"id": user_id},
+        expires_delta=access_token_expires
+    )
+    
+    logger.info(f"Token refreshed successfully for user ID: {user_id}")
+    return {"access_token": new_access_token, "token_type": "bearer"}
 
-# TODO: Implement logout endpoint as specified in API doc
-@router.post("/logout")
-def logout_user(logout_data: schemas.LogoutRequest, current_user: UserModel = auth.get_current_user):
-    # This is a placeholder - you'll need to implement logout logic
-    logger.info(f"Logout requested for user: {current_user.email}")
-    raise HTTPException(status_code=501, detail="Logout not yet implemented")
+# Implement logout endpoint
+@router.post("/logout", status_code=204)
+def logout_user(logout_data: schemas.LogoutRequest):
+    logger.info("Logout requested")
+    
+    # Verify the refresh token
+    payload = auth.verify_token(logout_data.refresh_token)
+    if not payload:
+        logger.warning("Invalid token during logout")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    # Invalidate the refresh token
+    success = auth.invalidate_token(logout_data.refresh_token)
+    
+    if not success:
+        logger.warning("Failed to invalidate token during logout")
+        raise HTTPException(status_code=500, detail="Failed to logout")
+    
+    logger.info(f"User logged out successfully, ID: {payload.get('id')}")
+    return None
