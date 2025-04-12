@@ -23,7 +23,7 @@ def create_test_token(data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 def test_read_main():
-    response = client.get("/healthcheck")
+    response = client.get("/api/v1/healthcheck")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
@@ -105,13 +105,17 @@ def create_test_post(mock_user):
         {"$push": {"tokens": token}}
     )
     
-    # Create a test post
+    # Create a test post with full schema
     test_post = {
         "title": "Test Post for Reading", 
         "content": "This is content for testing read operations",
-        "categories": [1],
+        "categories": [],
         "is_published": True
     }
+    
+    # Print debug info before making request
+    print(f"Sending request to /api/v1/posts with token: {token[:10]}...")
+    
     response = client.post(
         "/api/v1/posts",
         headers={"Authorization": f"Bearer {token}"},
@@ -119,6 +123,15 @@ def create_test_post(mock_user):
     )
     
     post_data = response.json()
+
+    # Check if we got an error response
+    if response.status_code >= 400:
+        from app.routes import router
+        print(f"Available routes:")
+        for route in router.routes:
+            print(f"  {route.path} [{', '.join(route.methods)}]")
+        raise Exception(f"Failed to create test post: {post_data}")
+    
     post_id = post_data["id"]
     
     # Return the post_id and the token for use in tests

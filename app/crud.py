@@ -185,3 +185,55 @@ def search_posts(query: str, limit: int = 100, skip: int = 0):
     except Exception as e:
         logger.error(f"Error searching posts: {str(e)}")
         raise
+
+def filter_posts(filters: Dict[str, Any], limit: int = 100, skip: int = 0):
+    logger.info(f"Filtering posts with filters: {filters}")
+    posts = []
+    try:
+        for post_data in posts_collection.find(filters).skip(skip).limit(limit).sort("created_at", -1):
+            posts.append(PostModel(**post_data))
+        logger.info(f"Filtered {len(posts)} posts")
+        return posts
+    except Exception as e:
+        logger.error(f"Error filtering posts: {str(e)}")
+        raise
+
+def get_filtered_posts(skip: int = 0, limit: int = 100, filters: Optional[Dict[str, Any]] = None, sort_by: str = "created_at", sort_direction: int = -1):   
+    logger.info(f"Retrieving filtered posts with skip: {skip}, limit: {limit}, filters: {filters}, sort_by: {sort_by}, sort_direction: {sort_direction}")
+    posts = []
+    try:
+        query = {}
+        if filters:
+            query.update(filters)
+        for post_data in posts_collection.find(query).skip(skip).limit(limit).sort(sort_by, sort_direction):
+            posts.append(PostModel(**post_data))
+        logger.info(f"Retrieved {len(posts)} filtered posts")
+        return posts
+    except Exception as e:
+        logger.error(f"Error retrieving filtered posts: {str(e)}")
+        raise
+
+def get_posts_by_category(category_id: int, limit: int = 100, skip: int = 0):
+    logger.info(f"Retrieving posts by category ID: {category_id}")
+    posts = []
+    try:
+        for post_data in posts_collection.find({"category_id": category_id}).skip(skip).limit(limit).sort("created_at", -1):
+            posts.append(PostModel(**post_data))
+        logger.info(f"Retrieved {len(posts)} posts for category: {category_id}")
+        return posts
+    except Exception as e:
+        logger.error(f"Error retrieving posts by category: {str(e)}")
+        raise
+
+def get_posts_by_author_and_category(author_id: str, category_id: int, limit: int = 100, skip: int = 0):
+    logger.info(f"Retrieving posts by author ID: {author_id} and category ID: {category_id}")
+    posts = []
+    try:
+        for post_data in posts_collection.find({"author_id": author_id, "category_id": category_id}).skip(skip).limit(limit).sort("created_at", -1):
+            posts.append(PostModel(**post_data))
+        logger.info(f"Retrieved {len(posts)} posts for author: {author_id} and category: {category_id}")
+        return posts
+    except Exception as e:
+        logger.error(f"Error retrieving posts by author and category: {str(e)}")
+        raise
+

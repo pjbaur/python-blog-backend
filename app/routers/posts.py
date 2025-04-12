@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
 from .. import auth, crud, schemas
 from ..models import UserModel, PostModel
 from datetime import datetime, timezone
@@ -11,7 +11,7 @@ import uuid
 logger = get_logger(__name__)
 
 router = APIRouter(
-    prefix="/api/v1/posts",
+    prefix="/posts",
     tags=["posts"],
 )
 
