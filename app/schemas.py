@@ -9,6 +9,10 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+
 # Token Info Schema
 class TokenInfo(BaseModel):
     token: str
@@ -23,6 +27,14 @@ class UserResponse(UserBase):
     class Config:
         orm_mode = True
 
+class UserPublicResponse(BaseModel):
+    id: str
+    email: EmailStr
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
 # Login Schema
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -32,6 +44,12 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+class LogoutRequest(BaseModel):
+    refresh_token: str
 
 # Post Schemas
 class PostCreate(BaseModel):

@@ -34,11 +34,16 @@ async def create_post(
 
 @router.get("", response_model=List[schemas.PostResponse])
 async def get_all_posts(
-    skip: int = Query(0, description="Number of posts to skip"),
-    limit: int = Query(10, description="Maximum number of posts to return")
+    skip: int = Query(0, description="Number of posts to skip", alias="page"),
+    limit: int = Query(10, description="Maximum number of posts to return"),
+    sort_by: str = Query("created_at", description="Field to sort by"),
+    order: str = Query("desc", description="Sort order (asc or desc)"),
+    category: str = Query(None, description="Filter by category"),
+    hashtag: str = Query(None, description="Filter by hashtag")
 ):
     logger.info(f"Retrieving posts with skip={skip}, limit={limit}")
     posts = crud.get_all_posts(limit=limit, skip=skip)
+    # Note: category and hashtag filtering not yet implemented
     return posts
 
 @router.get("/{post_id}", response_model=schemas.PostResponse)
@@ -49,16 +54,6 @@ async def get_post_by_id(post_id: str):
         logger.warning(f"Post not found with ID: {post_id}")
         raise HTTPException(status_code=404, detail="Post not found")
     return post
-
-@router.get("/search/", response_model=List[schemas.PostResponse])
-async def search_posts(
-    query: str,
-    skip: int = Query(0, description="Number of posts to skip"),
-    limit: int = Query(10, description="Maximum number of posts to return")
-):
-    logger.info(f"Searching posts with query: {query}")
-    posts = crud.search_posts(query, limit=limit, skip=skip)
-    return posts
 
 @router.put("/{post_id}", response_model=schemas.PostResponse)
 async def update_post(
@@ -111,15 +106,17 @@ async def delete_post(
     # Delete post
     crud.delete_post(post_id)
     logger.info(f"Post deleted: {post_id}")
-    return {"message": "Post deleted successfully"}
+    return {"detail": "Post successfully deleted"}
 
-# Add user-specific post endpoints
-@router.get("/user/{author_id}", response_model=List[schemas.PostResponse])
+# Move this to the users router as specified in the API doc
+# This endpoint should be at /api/v1/users/{user_id}/posts
+@router.get("/user/{author_id}", response_model=List[schemas.PostResponse], deprecated=True)
 async def get_posts_by_author(
     author_id: str,
     skip: int = Query(0, description="Number of posts to skip"),
     limit: int = Query(10, description="Maximum number of posts to return")
 ):
     logger.info(f"Retrieving posts by author: {author_id}")
+    logger.warning("This endpoint is deprecated. Use /api/v1/users/{user_id}/posts instead")
     posts = crud.get_posts_by_author(author_id, limit=limit, skip=skip)
     return posts
