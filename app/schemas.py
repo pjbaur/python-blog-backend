@@ -55,6 +55,8 @@ class LogoutRequest(BaseModel):
 class PostCreate(BaseModel):
     title: str
     content: str
+    categories: Optional[List[int]] = None
+    is_published: Optional[bool] = True
 
 class PostResponse(BaseModel):
     id: str
@@ -62,9 +64,18 @@ class PostResponse(BaseModel):
     content: str
     author_id: str
     created_at: datetime
-
+    updated_at: Optional[datetime] = None
+    categories: Optional[List[int]] = None
+    is_published: Optional[bool] = True
+    
     class Config:
         orm_mode = True
+
+class PostUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    categories: Optional[List[int]] = None
+    is_published: Optional[bool] = None
 
 # Comment Schemas
 class CommentCreate(BaseModel):
@@ -79,5 +90,14 @@ class CommentResponse(BaseModel):
     parent_id: Optional[str]
     created_at: datetime
 
+    class Config:
+        orm_mode = True
+
+# Image Schemas
+class ImageResponse(BaseModel):
+    id: str
+    filename: str
+    url: str
+    
     class Config:
         orm_mode = True

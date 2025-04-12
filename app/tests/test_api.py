@@ -5,6 +5,7 @@ from jose import JWTError, jwt
 import pytest
 import os
 from bson.objectid import ObjectId
+import io
 
 client = TestClient(app)
 
@@ -70,14 +71,19 @@ def test_create_post(mock_user):
         {"$push": {"tokens": token}}
     )
     
-    test_post = {"title": "Test Post", "content": "Test Content"}
+    test_post = {
+        "title": "Test Post", 
+        "content": "Test Content",
+        "categories": [1, 2],
+        "is_published": True
+    }
     response = client.post(
-        "/posts",  # Remove trailing slash to match the actual endpoint
+        "/api/v1/posts",
         headers={"Authorization": f"Bearer {token}"},
         json=test_post
     )
     
-    assert response.status_code == 200  # FastAPI uses 200 by default unless specified
+    assert response.status_code == 201  # Changed to 201 CREATED as per API spec
     data = response.json()
     assert data["title"] == test_post["title"]
     assert "id" in data
@@ -100,9 +106,14 @@ def create_test_post(mock_user):
     )
     
     # Create a test post
-    test_post = {"title": "Test Post for Reading", "content": "This is content for testing read operations"}
+    test_post = {
+        "title": "Test Post for Reading", 
+        "content": "This is content for testing read operations",
+        "categories": [1],
+        "is_published": True
+    }
     response = client.post(
-        "/posts",
+        "/api/v1/posts",
         headers={"Authorization": f"Bearer {token}"},
         json=test_post
     )
@@ -129,7 +140,7 @@ def test_read_all_posts(mock_user):
     )
     
     response = client.get(
-        "/posts",
+        "/api/v1/posts",
         headers={"Authorization": f"Bearer {token}"}
     )
     
@@ -143,7 +154,7 @@ def test_read_single_post(create_test_post):
     token = create_test_post["token"]
     
     response = client.get(
-        f"/posts/{post_id}",
+        f"/api/v1/posts/{post_id}",
         headers={"Authorization": f"Bearer {token}"}
     )
     
@@ -162,11 +173,13 @@ def test_update_post(create_test_post):
     
     updated_data = {
         "title": "Updated Test Post Title",
-        "content": "This content has been updated for testing"
+        "content": "This content has been updated for testing",
+        "categories": [3, 4],
+        "is_published": False
     }
     
     response = client.put(
-        f"/posts/{post_id}",
+        f"/api/v1/posts/{post_id}",
         headers={"Authorization": f"Bearer {token}"},
         json=updated_data
     )
@@ -189,7 +202,7 @@ def test_delete_post(create_test_post):
     token = create_test_post["token"]
     
     response = client.delete(
-        f"/posts/{post_id}",
+        f"/api/v1/posts/{post_id}",
         headers={"Authorization": f"Bearer {token}"}
     )
     
@@ -203,21 +216,21 @@ def test_delete_post(create_test_post):
 def test_unauthenticated_get_posts():
     """Test that unauthenticated users can access posts"""
     # Try to access posts without a token
-    response = client.get("/posts")
+    response = client.get("/api/v1/posts")
     assert response.status_code == 200
 
 def test_unauthorized_post_operations():
     """Test that unauthorized users cannot perform post operations"""
     # Try to create a post without a token
     test_post = {"title": "Unauthorized Post", "content": "This should not be created"}
-    response = client.post("/posts", json=test_post)
+    response = client.post("/api/v1/posts", json=test_post)
     assert response.status_code == 401
     
     # Try to create a post with an invalid token test
     test_post = {"title": "Unauthorized Post", "content": "This should not be created"}
     invalid_token = "invalid.token.here"
     response = client.post(
-        "/posts",
+        "/api/v1/posts",
         json=test_post,
         headers={"Authorization": f"Bearer {invalid_token}"}
     )
@@ -233,8 +246,33 @@ def test_missing_post():
     non_existent_id = str(ObjectId())
     
     response = client.get(
-        f"/posts/{non_existent_id}",
+        f"/api/v1/posts/{non_existent_id}",
         headers={"Authorization": f"Bearer {token}"}
     )
     
     assert response.status_code == 404  # Not Found
+
+def test_upload_post_image(create_test_post):
+    """Test uploading an image to a post"""
+    post_id = create_test_post["post_id"]
+    token = create_test_post["token"]
+    
+    # Create a test image file
+    test_image = io.BytesIO(b"test image content")
+    test_image.name = "test_image.jpg"
+    
+    response = client.post(
+        f"/api/v1/posts/{post_id}/images",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("test_image.jpg", test_image, "image/jpeg")}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "id" in data
+    assert "filename" in data
+    assert "url" in data
+    
+    # Clean up - remove created file
+    if os.path.exists(data["url"].replace("http://localhost:8000/", "")):
+        os.remove(data["url"].replace("http://localhost:8000/", ""))
