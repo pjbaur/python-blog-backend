@@ -1,61 +1,17 @@
 from fastapi.testclient import TestClient
 from app.main import app
-from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt
 import pytest
 import os
 from bson.objectid import ObjectId
+from app.tests.test_utils import create_test_token, mock_user
 import io
 
 client = TestClient(app)
-
-def create_test_token(data: dict, expires_delta: timedelta = None):
-    # Use the same SECRET_KEY as the application
-    from app.auth import SECRET_KEY
-    
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
-    return encoded_jwt
 
 def test_read_main():
     response = client.get("/api/v1/healthcheck")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
-
-# Set up a mock user for testing
-@pytest.fixture
-def mock_user():
-    # Create a test user ID in ObjectId format
-    user_id = str(ObjectId())
-    
-    # Mock inserting the token in the database
-    from app.database import db
-    from app.auth import get_password_hash
-    
-    # Create a test user with a token list
-    test_user = {
-        "_id": ObjectId(user_id),
-        "email": "testuser@example.com",
-        "hashed_password": get_password_hash("testpassword"),
-        "is_active": True,
-        "is_admin": False,
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
-        "tokens": []
-    }
-    
-    # Insert the user in the database
-    db['users'].insert_one(test_user)
-    
-    yield user_id
-    
-    # Clean up - remove the test user
-    db['users'].delete_one({"_id": ObjectId(user_id)})
 
 # Example CRUD endpoints tests
 def test_create_post(mock_user):

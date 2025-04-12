@@ -78,11 +78,12 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 ## Development
 
 ### Running Tests
+_I'm disabling the warmings because there are some library warning. You definitely want to run the tests at some point with the warnings enabled._
 ```
 pytest
-pytest --cov=app
-pytest --cov=app --cov-report=html
-pytest -v
+pytest --cov --disable-warnings
+pytest --cov --cov-report=html --disable-warnings
+pytest -v --disable-warnings
 ```
 
 ### Testing endpoints with curl
