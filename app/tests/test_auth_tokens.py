@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from datetime import datetime, timedelta, timezone
-from jose import jwt
+import jwt
 
 from app.main import app
 from app.tests.test_utils import mock_user, mock_user_with_tokens, create_test_token

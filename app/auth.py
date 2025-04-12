@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -112,15 +113,24 @@ def verify_token(token: str, token_type: str = None):
             logger.warning(f"Token validation failed: Expected {token_type} token but got {payload.get('token_type')}")
             return None
             
-        # Check if token exists in user's token list
-        user = users_collection.find_one({"_id": ObjectId(user_id), "tokens": token})
+        # Check if token exists in user's tokens list - check both formats:
+        # 1. As a string token directly in the list
+        # 2. As part of a TokenInfo object with {token: token, expires_at: date}
+        user = users_collection.find_one(
+            {"_id": ObjectId(user_id), 
+             "$or": [
+                 {"tokens": token},  # Old format: direct token string
+                 {"tokens.token": token}  # New format: token inside TokenInfo object
+             ]
+            }
+        )
         if not user:
             logger.warning(f"Token validation failed: Token not found for user ID: {user_id}")
             return None
             
         logger.debug(f"Token verified successfully for user ID: {user_id}")
         return payload
-    except JWTError as e:
+    except PyJWTError as e:
         logger.warning(f"Token validation failed: JWT Error: {str(e)}")
         return None
 
@@ -130,13 +140,23 @@ def invalidate_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("id")
         if user_id:
+            # Try to remove the token in both formats
+            # 1. First try to remove as direct token string
             result = users_collection.update_one(
                 {"_id": ObjectId(user_id)},
                 {"$pull": {"tokens": token}}
             )
+            
+            # 2. Then try to remove as part of TokenInfo object
+            if result.modified_count == 0:
+                result = users_collection.update_one(
+                    {"_id": ObjectId(user_id)},
+                    {"$pull": {"tokens": {"token": token}}}
+                )
+                
             logger.info(f"Token invalidated for user ID: {user_id}, modified: {result.modified_count}")
             return result.modified_count > 0
-    except JWTError as e:
+    except PyJWTError as e:
         logger.warning(f"Token invalidation failed: JWT Error: {str(e)}")
     return False
 

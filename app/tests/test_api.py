@@ -248,7 +248,6 @@ def test_upload_post_image(create_test_post):
         os.remove(data["url"].replace("http://localhost:8000/", ""))
 
 # === User Profile Update Tests ===
-'''
 def test_get_current_user(mock_user):
     """Test getting the current user profile"""
     # Create a token for authentication
@@ -257,7 +256,7 @@ def test_get_current_user(mock_user):
     # Add the token to the user's token list
     from app.database import db
     from datetime import datetime, timezone
-    from jose import JWTError, jwt
+    import jwt
     from app.auth import SECRET_KEY, ALGORITHM
     
     # Get token expiration from the payload
@@ -406,7 +405,6 @@ def test_update_user_email_and_password(mock_user):
             "hashed_password": user_before["hashed_password"]
         }}
     )
-'''
 
 @pytest.fixture
 def create_second_user():
@@ -469,38 +467,6 @@ def test_update_email_already_taken(mock_user, create_second_user):
     user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
     assert user_after["email"] != taken_email
 
-'''
-def test_update_user_empty_payload(mock_user):
-    """Test that empty updates don't modify the user"""
-    # Create a token for authentication
-    token = create_test_token(data={"id": mock_user})
-    
-    # Add the token to the user's token list
-    from app.database import db
-    db['users'].update_one(
-        {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
-    )
-    
-    # Get the current user data for comparison
-    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
-    
-    # Update request with empty payload
-    response = client.put(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {token}"},
-        json={}
-    )
-    
-    # Check response
-    assert response.status_code == 200
-    
-    # Verify database was not modified (except for updated_at)
-    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
-    assert user_after["email"] == user_before["email"]
-    assert user_after["hashed_password"] == user_before["hashed_password"]
-'''
-    
 def test_update_user_unauthorized():
     """Test that unauthorized users cannot update profile"""
     # Try to update without a token

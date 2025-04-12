@@ -34,7 +34,7 @@ async def admin_get_users(current_user: UserModel = Depends(auth.get_current_use
                         # Convert unix timestamp to datetime
                         expires_at = datetime.fromtimestamp(exp_timestamp)
                         token_info_list.append(schemas.TokenInfo(token=token, expires_at=expires_at))
-                except auth.JWTError:
+                except auth.PyJWTError:
                     # Skip invalid tokens
                     logger.debug(f"Invalid token found for user: {user.email}")
                     continue

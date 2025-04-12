@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from jose import jwt
+import jwt
 import pytest
 from bson.objectid import ObjectId
 from fastapi.testclient import TestClient
