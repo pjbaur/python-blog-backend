@@ -5,6 +5,7 @@ import os
 from bson.objectid import ObjectId
 from app.tests.test_utils import create_test_token, mock_user
 import io
+from app.auth import verify_password, get_password_hash
 
 client = TestClient(app)
 
@@ -245,3 +246,262 @@ def test_upload_post_image(create_test_post):
     # Clean up - remove created file
     if os.path.exists(data["url"].replace("http://localhost:8000/", "")):
         os.remove(data["url"].replace("http://localhost:8000/", ""))
+
+# === User Profile Update Tests ===
+
+def test_get_current_user(mock_user):
+    """Test getting the current user profile"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    from app.database import db
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    response = client.get(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "id" in data
+    assert "email" in data
+    assert data["id"] == mock_user
+
+def test_update_user_email(mock_user):
+    """Test updating a user's email"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    from app.database import db
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    # Get the current user data for comparison
+    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
+    
+    # Define new email
+    new_email = "updated_email@example.com"
+    
+    # Update request
+    response = client.put(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"email": new_email}
+    )
+    
+    # Check response
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == new_email
+    
+    # Verify database was updated
+    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
+    assert user_after["email"] == new_email
+    
+    # Reset to original email for cleanup
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$set": {"email": user_before["email"]}}
+    )
+
+def test_update_user_password(mock_user):
+    """Test updating a user's password"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    from app.database import db
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    # Get the current user data for comparison
+    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
+    
+    # Define new password
+    new_password = "newstrongpassword123"
+    
+    # Update request
+    response = client.put(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"password": new_password}
+    )
+    
+    # Check response
+    assert response.status_code == 200
+    
+    # Verify database was updated - password should be hashed
+    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
+    assert user_after["hashed_password"] != user_before["hashed_password"]
+    assert verify_password(new_password, user_after["hashed_password"])
+    
+    # Reset to original password hash for cleanup
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$set": {"hashed_password": user_before["hashed_password"]}}
+    )
+
+def test_update_user_email_and_password(mock_user):
+    """Test updating a user's email and password simultaneously"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    from app.database import db
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    # Get the current user data for comparison
+    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
+    
+    # Define new values
+    new_email = "both_updated@example.com"
+    new_password = "bothupdatedpassword123"
+    
+    # Update request
+    response = client.put(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"email": new_email, "password": new_password}
+    )
+    
+    # Check response
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == new_email
+    
+    # Verify database was updated
+    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
+    assert user_after["email"] == new_email
+    assert user_after["hashed_password"] != user_before["hashed_password"]
+    assert verify_password(new_password, user_after["hashed_password"])
+    
+    # Reset to original values for cleanup
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$set": {
+            "email": user_before["email"],
+            "hashed_password": user_before["hashed_password"]
+        }}
+    )
+
+@pytest.fixture
+def create_second_user():
+    """Create a second user for duplicate email testing"""
+    # Create a test user ID in ObjectId format
+    user_id = str(ObjectId())
+    
+    # Set up the database
+    from app.database import db
+    from app.auth import get_password_hash
+    from datetime import datetime, timezone
+    
+    test_user = {
+        "_id": ObjectId(user_id),
+        "email": "second_user@example.com",
+        "hashed_password": get_password_hash("testpassword"),
+        "is_active": True,
+        "is_admin": False,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+        "tokens": []
+    }
+    
+    # Insert the user in the database
+    db['users'].insert_one(test_user)
+    
+    yield user_id
+    
+    # Clean up - remove the test user
+    db['users'].delete_one({"_id": ObjectId(user_id)})
+
+def test_update_email_already_taken(mock_user, create_second_user):
+    """Test attempting to update to an email that's already taken by another user"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    from app.database import db
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    # Get second user's email
+    second_user = db['users'].find_one({"_id": ObjectId(create_second_user)})
+    taken_email = second_user["email"]
+    
+    # Update request with already taken email
+    response = client.put(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"email": taken_email}
+    )
+    
+    # Should fail with 400 Bad Request
+    assert response.status_code == 400
+    assert "Email already registered" in response.json()["detail"]
+    
+    # Verify database was not updated
+    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
+    assert user_after["email"] != taken_email
+
+def test_update_user_empty_payload(mock_user):
+    """Test that empty updates don't modify the user"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    from app.database import db
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    # Get the current user data for comparison
+    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
+    
+    # Update request with empty payload
+    response = client.put(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={}
+    )
+    
+    # Check response
+    assert response.status_code == 200
+    
+    # Verify database was not modified (except for updated_at)
+    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
+    assert user_after["email"] == user_before["email"]
+    assert user_after["hashed_password"] == user_before["hashed_password"]
+
+def test_update_user_unauthorized():
+    """Test that unauthorized users cannot update profile"""
+    # Try to update without a token
+    response = client.put(
+        "/api/v1/users/me",
+        json={"email": "unauthorized@example.com"}
+    )
+    assert response.status_code == 401
+    
+    # Try with invalid token
+    invalid_token = "invalid.token.here"
+    response = client.put(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {invalid_token}"},
+        json={"email": "unauthorized@example.com"}
+    )
+    assert response.status_code == 401
