@@ -51,6 +51,7 @@ class RefreshTokenRequest(BaseModel):
 
 class LogoutRequest(BaseModel):
     refresh_token: str
+    access_token: Optional[str] = None
 
 # Post Schemas
 class PostCreate(BaseModel):

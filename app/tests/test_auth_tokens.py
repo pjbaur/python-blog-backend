@@ -223,3 +223,26 @@ class TestLogout:
         user = db['users'].find_one({"_id": ObjectId(user_id)})
         assert refresh_token not in user["tokens"]
         assert access_token in user["tokens"]
+
+    def test_logout_with_both_tokens(self, mock_user_with_tokens):
+        """Test that logout can invalidate both access and refresh tokens when provided"""
+        refresh_token = mock_user_with_tokens["refresh_token"]
+        access_token = mock_user_with_tokens["access_token"]
+        user_id = mock_user_with_tokens["user_id"]
+        
+        # Call the logout endpoint with both tokens
+        response = client.post(
+            "/api/v1/auth/logout",
+            json={
+                "refresh_token": refresh_token,
+                "access_token": access_token
+            }
+        )
+        
+        # Check that the request was successful
+        assert response.status_code == 204
+        
+        # Verify both tokens were removed from the database
+        user = db['users'].find_one({"_id": ObjectId(user_id)})
+        assert refresh_token not in user["tokens"]
+        assert access_token not in user["tokens"]

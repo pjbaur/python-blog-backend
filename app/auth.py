@@ -140,6 +140,20 @@ def invalidate_token(token: str):
         logger.warning(f"Token invalidation failed: JWT Error: {str(e)}")
     return False
 
+def invalidate_tokens(tokens: list):
+    """Remove multiple tokens from the user's token list."""
+    if not tokens or len(tokens) == 0:
+        logger.warning("No tokens provided for invalidation")
+        return False
+    
+    success = True
+    for token in tokens:
+        if token:  # Skip None or empty tokens
+            if not invalidate_token(token):
+                success = False
+    
+    return success
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     logger.debug("Validating token for authentication")
     credentials_exception = HTTPException(

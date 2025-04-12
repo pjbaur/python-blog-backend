@@ -87,14 +87,26 @@ def logout_user(logout_data: schemas.LogoutRequest):
     # Verify the refresh token
     payload = auth.verify_token(logout_data.refresh_token)
     if not payload:
-        logger.warning("Invalid token during logout")
+        logger.warning("Invalid refresh token during logout")
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    # Invalidate the refresh token
-    success = auth.invalidate_token(logout_data.refresh_token)
+    # Prepare tokens to invalidate
+    tokens_to_invalidate = [logout_data.refresh_token]
+    
+    # Add access token if provided
+    if logout_data.access_token:
+        # Verify the access token belongs to the same user
+        access_payload = auth.verify_token(logout_data.access_token, token_type="access")
+        if access_payload and access_payload.get("id") == payload.get("id"):
+            tokens_to_invalidate.append(logout_data.access_token)
+        else:
+            logger.warning("Invalid access token during logout")
+    
+    # Invalidate all provided tokens
+    success = auth.invalidate_tokens(tokens_to_invalidate)
     
     if not success:
-        logger.warning("Failed to invalidate token during logout")
+        logger.warning("Failed to invalidate tokens during logout")
         raise HTTPException(status_code=500, detail="Failed to logout")
     
     logger.info(f"User logged out successfully, ID: {payload.get('id')}")
