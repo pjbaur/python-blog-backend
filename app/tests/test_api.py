@@ -255,19 +255,15 @@ def test_get_current_user(mock_user):
     
     # Add the token to the user's token list
     from app.database import db
-    from datetime import datetime, timezone
-    import jwt
-    from app.auth import SECRET_KEY, ALGORITHM
+    from datetime import datetime, timedelta, timezone
     
-    # Get token expiration from the payload
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    exp_timestamp = payload.get("exp")
-    expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+    # Create a TokenInfo-compatible structure with the token and expiry
+    token_expires = datetime.now(timezone.utc) + timedelta(minutes=15)
     
-    # Add the token as a TokenInfo object (matching the schema)
+    # Update with a token structure that matches UserResponse schema expectations
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$set": {"tokens": [{"token": token, "expires_at": expires_at}]}}
+        {"$set": {"tokens": [{"token": token, "expires_at": token_expires}]}}
     )
     
     response = client.get(
@@ -288,9 +284,15 @@ def test_update_user_email(mock_user):
     
     # Add the token to the user's token list
     from app.database import db
+    from datetime import datetime, timedelta, timezone
+    
+    # Create a TokenInfo-compatible structure with the token and expiry
+    token_expires = datetime.now(timezone.utc) + timedelta(minutes=15)
+    
+    # Update with a token structure that matches UserResponse schema expectations
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
+        {"$set": {"tokens": [{"token": token, "expires_at": token_expires}]}}
     )
     
     # Get the current user data for comparison
@@ -328,9 +330,15 @@ def test_update_user_password(mock_user):
     
     # Add the token to the user's token list
     from app.database import db
+    from datetime import datetime, timedelta, timezone
+    
+    # Create a TokenInfo-compatible structure with the token and expiry
+    token_expires = datetime.now(timezone.utc) + timedelta(minutes=15)
+    
+    # Update with a token structure that matches UserResponse schema expectations
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
+        {"$set": {"tokens": [{"token": token, "expires_at": token_expires}]}}
     )
     
     # Get the current user data for comparison
@@ -367,9 +375,15 @@ def test_update_user_email_and_password(mock_user):
     
     # Add the token to the user's token list
     from app.database import db
+    from datetime import datetime, timedelta, timezone
+    
+    # Create a TokenInfo-compatible structure with the token and expiry
+    token_expires = datetime.now(timezone.utc) + timedelta(minutes=15)
+    
+    # Update with a token structure that matches UserResponse schema expectations
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
+        {"$set": {"tokens": [{"token": token, "expires_at": token_expires}]}}
     )
     
     # Get the current user data for comparison
