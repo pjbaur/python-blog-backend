@@ -25,6 +25,9 @@ def test_read_main():
 
 def test_create_post(mock_user):
     """Test creating a new post"""
+    from datetime import datetime, timezone
+    from jose import jwt
+    from app.auth import SECRET_KEY, ALGORITHM
 
     logger.info("*****Starting test_create_post")
     logger.debug("mock_user: %s", mock_user)
@@ -34,11 +37,16 @@ def test_create_post(mock_user):
         data={"id": mock_user},  # Use "id" instead of "_id" to match application logic
     )
     
-    # Add the token to the user's token list
+    # Get token expiration from the payload
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    exp_timestamp = payload.get("exp")
+    expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+    
+    # Add the token with TokenInfo format
     from app.database import db
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
+        {"$push": {"tokens": {"token": token, "expires_at": expires_at}}}
     )
     
     test_post = {
@@ -65,14 +73,23 @@ def test_create_post(mock_user):
 @pytest.fixture
 def create_test_post(mock_user):
     """Fixture to create a test post for testing read, update and delete operations"""
+    from datetime import datetime, timezone
+    from jose import jwt
+    from app.auth import SECRET_KEY, ALGORITHM
+    
     # Create a token for authentication
     token = create_test_token(data={"id": mock_user})
     
-    # Add the token to the user's token list
+    # Get token expiration from the payload
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    exp_timestamp = payload.get("exp")
+    expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+    
+    # Add the token using the TokenInfo format
     from app.database import db
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
+        {"$push": {"tokens": {"token": token, "expires_at": expires_at}}}
     )
     
     # Create a test post with full schema
@@ -272,15 +289,8 @@ def test_get_current_user(mock_user):
     logger.debug("mock_user: %s", mock_user)
 
     # Create a token for authentication
-    # access_token = create_test_token(data={"id": mock_user})
     access_token = create_test_token({"id": mock_user}, token_type="access")
     logger.debug(f"Token: {access_token}")
-
-# app.tests.test_api - INFO - Starting test_get_current_user
-# asyncio - DEBUG - Using selector: KqueueSelector
-# app.auth - DEBUG - Validating token for authentication
-# app.auth - DEBUG - Verifying token for user ID: 67fc0320f077e4f723cba63e
-# app.auth - WARNING - Token validation failed: Token not found for user ID: 67fc0320f077e4f723cba63e
 
     # Get token expiration from the payload
     payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -292,12 +302,9 @@ def test_get_current_user(mock_user):
     # Add the token as a TokenInfo object (matching the schema)
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$set": {"tokens": [{"token": access_token, "expires_at": expires_at}]}}
+        {"$push": {"tokens": {"token": access_token, "expires_at": expires_at}}}
     )
     
-    # TODO: Audit ALL code reading and writing tokens, including the schema. They should all follow the above pattern.
-    # (An array of objects, each with a token and an expiration time)
-
     response = client.get(
         "/api/v1/users/me",
         headers={"Authorization": f"Bearer {access_token}"}
@@ -308,133 +315,6 @@ def test_get_current_user(mock_user):
     assert "id" in data
     assert "email" in data
     assert data["id"] == mock_user
-
-'''
-def test_update_user_email(mock_user):
-    """Test updating a user's email"""
-    # Create a token for authentication
-    token = create_test_token(data={"id": mock_user})
-    
-    # Add the token to the user's token list
-    from app.database import db
-    db['users'].update_one(
-        {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
-    )
-    
-    # Get the current user data for comparison
-    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
-    
-    # Define new email
-    new_email = "updated_email@example.com"
-    
-    # Update request
-    response = client.put(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {token}"},
-        json={"email": new_email}
-    )
-    
-    # Check response
-    assert response.status_code == 200
-    data = response.json()
-    assert data["email"] == new_email
-    
-    # Verify database was updated
-    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
-    assert user_after["email"] == new_email
-    
-    # Reset to original email for cleanup
-    db['users'].update_one(
-        {"_id": ObjectId(mock_user)},
-        {"$set": {"email": user_before["email"]}}
-    )
-
-def test_update_user_password(mock_user):
-    """Test updating a user's password"""
-    # Create a token for authentication
-    token = create_test_token(data={"id": mock_user})
-    
-    # Add the token to the user's token list
-    from app.database import db
-    db['users'].update_one(
-        {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
-    )
-    
-    # Get the current user data for comparison
-    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
-    
-    # Define new password
-    new_password = "newstrongpassword123"
-    
-    # Update request
-    response = client.put(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {token}"},
-        json={"password": new_password}
-    )
-    
-    # Check response
-    assert response.status_code == 200
-    
-    # Verify database was updated - password should be hashed
-    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
-    assert user_after["hashed_password"] != user_before["hashed_password"]
-    assert verify_password(new_password, user_after["hashed_password"])
-    
-    # Reset to original password hash for cleanup
-    db['users'].update_one(
-        {"_id": ObjectId(mock_user)},
-        {"$set": {"hashed_password": user_before["hashed_password"]}}
-    )
-
-def test_update_user_email_and_password(mock_user):
-    """Test updating a user's email and password simultaneously"""
-    # Create a token for authentication
-    token = create_test_token(data={"id": mock_user})
-    
-    # Add the token to the user's token list
-    from app.database import db
-    db['users'].update_one(
-        {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
-    )
-    
-    # Get the current user data for comparison
-    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
-    
-    # Define new values
-    new_email = "both_updated@example.com"
-    new_password = "bothupdatedpassword123"
-    
-    # Update request
-    response = client.put(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {token}"},
-        json={"email": new_email, "password": new_password}
-    )
-    
-    # Check response
-    assert response.status_code == 200
-    data = response.json()
-    assert data["email"] == new_email
-    
-    # Verify database was updated
-    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
-    assert user_after["email"] == new_email
-    assert user_after["hashed_password"] != user_before["hashed_password"]
-    assert verify_password(new_password, user_after["hashed_password"])
-    
-    # Reset to original values for cleanup
-    db['users'].update_one(
-        {"_id": ObjectId(mock_user)},
-        {"$set": {
-            "email": user_before["email"],
-            "hashed_password": user_before["hashed_password"]
-        }}
-    )
-'''
 
 @pytest.fixture
 def create_second_user():
@@ -468,14 +348,23 @@ def create_second_user():
 
 def test_update_email_already_taken(mock_user, create_second_user):
     """Test attempting to update to an email that's already taken by another user"""
+    from app.database import db
+    from datetime import datetime, timezone
+    from jose import jwt
+    from app.auth import SECRET_KEY, ALGORITHM
+    
     # Create a token for authentication
     token = create_test_token(data={"id": mock_user})
     
-    # Add the token to the user's token list
-    from app.database import db
+    # Get token expiration from the payload
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    exp_timestamp = payload.get("exp")
+    expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+    
+    # Add the token as TokenInfo object
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
+        {"$push": {"tokens": {"token": token, "expires_at": expires_at}}}
     )
     
     # Get second user's email
@@ -497,38 +386,6 @@ def test_update_email_already_taken(mock_user, create_second_user):
     user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
     assert user_after["email"] != taken_email
 
-'''
-def test_update_user_empty_payload(mock_user):
-    """Test that empty updates don't modify the user"""
-    # Create a token for authentication
-    token = create_test_token(data={"id": mock_user})
-    
-    # Add the token to the user's token list
-    from app.database import db
-    db['users'].update_one(
-        {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": token}}
-    )
-    
-    # Get the current user data for comparison
-    user_before = db['users'].find_one({"_id": ObjectId(mock_user)})
-    
-    # Update request with empty payload
-    response = client.put(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {token}"},
-        json={}
-    )
-    
-    # Check response
-    assert response.status_code == 200
-    
-    # Verify database was not modified (except for updated_at)
-    user_after = db['users'].find_one({"_id": ObjectId(mock_user)})
-    assert user_after["email"] == user_before["email"]
-    assert user_after["hashed_password"] == user_before["hashed_password"]
-'''
-    
 def test_update_user_unauthorized():
     """Test that unauthorized users cannot update profile"""
     # Try to update without a token

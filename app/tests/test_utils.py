@@ -62,8 +62,56 @@ def mock_user():
     yield user_id
     
     # Clean up - remove the test user
-    # TODO: This is commented out for debuggingg purposes. Uncomment when ready to test for cereal.
-    # db['users'].delete_one({"_id": ObjectId(user_id)})
+    db['users'].delete_one({"_id": ObjectId(user_id)})
+
+@pytest.fixture
+def mock_admin_user():
+    """Create a mock admin user for testing admin endpoints"""
+    # Create a test admin user ID
+    user_id = str(ObjectId())
+    
+    # Set up the database user with admin privileges
+    from app.database import db
+    from app.auth import get_password_hash
+    from datetime import datetime, timezone
+    
+    test_admin = {
+        "_id": ObjectId(user_id),
+        "email": "admin@example.com",
+        "hashed_password": get_password_hash("adminpassword"),
+        "is_active": True,
+        "is_admin": True,  # Admin privileges
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+        "tokens": []
+    }
+    
+    # Insert the admin user in the database
+    db['users'].insert_one(test_admin)
+    
+    # Create a token for the admin user
+    token = create_test_token(
+        {"id": user_id}, token_type="access"
+    )
+    
+    # Get token expiration from the payload
+    from jose import jwt
+    from app.auth import SECRET_KEY, ALGORITHM
+    
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    exp_timestamp = payload.get("exp")
+    expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+    
+    # Add the token as a TokenInfo object (matching the schema)
+    db['users'].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$push": {"tokens": {"token": token, "expires_at": expires_at}}}
+    )
+    
+    yield {"user_id": user_id, "token": token}
+    
+    # Clean up - remove the test admin user
+    db['users'].delete_one({"_id": ObjectId(user_id)})
 
 @pytest.fixture
 def mock_user_with_tokens():
@@ -74,6 +122,7 @@ def mock_user_with_tokens():
     # Get auth utilities
     from app.database import db
     from app.auth import get_password_hash
+    from app.auth import SECRET_KEY, ALGORITHM
     
     # Create test tokens
     access_token = create_test_token({"id": user_id}, token_type="access")
@@ -83,7 +132,14 @@ def mock_user_with_tokens():
         token_type="refresh"
     )
     
-    # Create a test user with tokens
+    # Get token expirations from the payloads
+    access_payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+    access_exp = datetime.fromtimestamp(access_payload.get("exp"), tz=timezone.utc)
+    
+    refresh_payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+    refresh_exp = datetime.fromtimestamp(refresh_payload.get("exp"), tz=timezone.utc)
+    
+    # Create a test user with tokens in TokenInfo format
     test_user = {
         "_id": ObjectId(user_id),
         "email": "testuser_with_tokens@example.com",
@@ -92,7 +148,10 @@ def mock_user_with_tokens():
         "is_admin": False,
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
-        "tokens": [access_token, refresh_token]
+        "tokens": [
+            {"token": access_token, "expires_at": access_exp},
+            {"token": refresh_token, "expires_at": refresh_exp}
+        ]
     }
     
     # Insert the user in the database

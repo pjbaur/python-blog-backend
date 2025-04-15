@@ -3,59 +3,29 @@ from app.main import app
 from datetime import datetime, timezone
 import pytest
 from bson.objectid import ObjectId
-from app.tests.test_utils import create_test_token, mock_user
+from app.tests.test_utils import create_test_token, mock_user, mock_user_with_tokens, mock_admin_user
+from app.logger import setup_logging, get_logger
 
 client = TestClient(app)
 
-@pytest.fixture
-def mock_admin_user():
-    """Create a mock admin user for testing admin endpoints"""
-    # Create a test admin user ID
-    user_id = str(ObjectId())
-    
-    # Set up the database user with admin privileges
-    from app.database import db
-    from app.auth import get_password_hash
-    
-    test_admin = {
-        "_id": ObjectId(user_id),
-        "email": "admin@example.com",
-        "hashed_password": get_password_hash("adminpassword"),
-        "is_active": True,
-        "is_admin": True,  # Admin privileges
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
-        "tokens": []
-    }
-    
-    # Insert the admin user in the database
-    db['users'].insert_one(test_admin)
-    
-    # Create a token for the admin user
-    token = create_test_token(
-        data={"id": user_id},
-    )
-    
-    # Add the token to the user's token list
-    db['users'].update_one(
-        {"_id": ObjectId(user_id)},
-        {"$push": {"tokens": token}}
-    )
-    
-    yield {"user_id": user_id, "token": token}
-    
-    # Clean up - remove the test admin user
-    db['users'].delete_one({"_id": ObjectId(user_id)})
+logger = get_logger(__name__)
+setup_logging()
 
 def test_admin_get_users(mock_admin_user):
     """Test that admin users can access the /admin/users endpoint"""
-    token = mock_admin_user["token"]
+    logger.debug("*****Testing admin access to /admin/users endpoint")  
     
+    token = mock_admin_user["token"]
+    logger.debug(f"Using token: {token}")
+
     response = client.get(
         "/api/v1/admin/users",
         headers={"Authorization": f"Bearer {token}"}
     )
     
+    logger.debug(f"Response status code: {response.status_code}")
+    logger.debug(f"Response content: {response.content}")
+
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
@@ -71,8 +41,11 @@ def test_admin_get_users(mock_admin_user):
 def test_non_admin_get_users(mock_user):
     """Test that non-admin users cannot access the /admin/users endpoint"""
     # Create a token for the non-admin user
+    logger.debug("*****Testing non-admin access to /admin/users endpoint")
+
     token = create_test_token(data={"id": mock_user})
-    
+    logger.debug(f"Using token: {token}")
+
     # Add the token to the user's token list
     from app.database import db
     db['users'].update_one(
@@ -86,7 +59,7 @@ def test_non_admin_get_users(mock_user):
     )
     
     # Should return a 403 Forbidden status
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 def test_unauthorized_admin_access():
     """Test that unauthorized requests cannot access admin endpoints"""

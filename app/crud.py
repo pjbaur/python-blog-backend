@@ -3,6 +3,7 @@ from .database import db
 from bson.objectid import ObjectId
 from .logger import get_logger
 from typing import List, Dict, Any, Optional
+from datetime import timedelta
 
 # Set up logger
 logger = get_logger(__name__)
@@ -59,7 +60,41 @@ def get_all_users():
     users = []
     try:
         for user_data in users_collection.find():
+            # Handle legacy token format (convert string tokens to TokenInfo objects)
+            if "tokens" in user_data and user_data["tokens"]:
+                from datetime import datetime, timezone
+                from jose import jwt
+                from .auth import SECRET_KEY, ALGORITHM
+                tokens = user_data["tokens"]
+                converted_tokens = []
+                
+                for token_item in tokens:
+                    # If token is a string, convert it to TokenInfo format
+                    if isinstance(token_item, str):
+                        try:
+                            # Attempt to decode the token to get the expiration time
+                            payload = jwt.decode(token_item, SECRET_KEY, algorithms=[ALGORITHM])
+                            if "exp" in payload:
+                                exp_timestamp = payload.get("exp")
+                                expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+                                converted_tokens.append({"token": token_item, "expires_at": expires_at})
+                            else:
+                                # If no exp claim, use a default expiration (30 days from now)
+                                expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+                                converted_tokens.append({"token": token_item, "expires_at": expires_at})
+                        except Exception as e:
+                            logger.warning(f"Failed to convert token format: {str(e)}")
+                            # Skip invalid tokens
+                            continue
+                    else:
+                        # Already in new format or another format, keep as is
+                        converted_tokens.append(token_item)
+                
+                # Replace tokens with converted format
+                user_data["tokens"] = converted_tokens
+            
             users.append(UserModel(**user_data))
+        
         logger.info(f"Retrieved {len(users)} users")
         return users
     except Exception as e:

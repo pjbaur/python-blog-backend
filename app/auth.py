@@ -61,10 +61,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire, "token_type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    # Store the token in the user's token list for invalidation
+    # Store the token as TokenInfo object with token and expiry
     users_collection.update_one(
         {"_id": ObjectId(data["id"])},
-        {"$push": {"tokens": encoded_jwt}}
+        {"$push": {"tokens": {"token": encoded_jwt, "expires_at": expire}}}
     )
     logger.debug(f"Access token created for user ID: {data['id']}, expires: {expire}")
     return encoded_jwt
@@ -75,10 +75,10 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(days=7))
     to_encode.update({"exp": expire, "token_type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    # Store the refresh token in the user's token list
+    # Store the refresh token as TokenInfo object with token and expiry
     users_collection.update_one(
         {"_id": ObjectId(data["id"])},
-        {"$push": {"tokens": encoded_jwt}}
+        {"$push": {"tokens": {"token": encoded_jwt, "expires_at": expire}}}
     )
     logger.debug(f"Refresh token created for user ID: {data['id']}, expires: {expire}")
     return encoded_jwt
@@ -118,8 +118,8 @@ def verify_token(token: str, token_type: str = None):
             logger.warning(f"Token validation failed: Expected {token_type} token but got {payload.get('token_type')}")
             return None
             
-        # Check if token exists in user's token list
-        user = users_collection.find_one({"_id": ObjectId(user_id), "tokens": token})
+        # Check if token exists in user's token list (now in TokenInfo format)
+        user = users_collection.find_one({"_id": ObjectId(user_id), "tokens.token": token})
         if not user:
             logger.warning(f"Token validation failed: Token not found for user ID: {user_id}")
             return None
@@ -138,7 +138,7 @@ def invalidate_token(token: str):
         if user_id:
             result = users_collection.update_one(
                 {"_id": ObjectId(user_id)},
-                {"$pull": {"tokens": token}}
+                {"$pull": {"tokens": {"token": token}}}
             )
             logger.info(f"Token invalidated for user ID: {user_id}, modified: {result.modified_count}")
             return result.modified_count > 0

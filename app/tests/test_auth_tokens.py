@@ -60,8 +60,11 @@ class TestRefreshToken:
             
             # Verify tokens are stored in the database
             user = db['users'].find_one({"_id": user_id})
-            assert data["access_token"] in user["tokens"]
-            assert data["refresh_token"] in user["tokens"]
+            
+            # Check for tokens in TokenInfo format
+            token_values = [token_info["token"] for token_info in user["tokens"]]
+            assert data["access_token"] in token_values
+            assert data["refresh_token"] in token_values
             
         finally:
             # Clean up
@@ -91,7 +94,9 @@ class TestRefreshToken:
         
         # Verify the new access token is stored in the database
         user = db['users'].find_one({"_id": ObjectId(user_id)})
-        assert data["access_token"] in user["tokens"]
+        # Check for token in TokenInfo format
+        token_values = [token_info["token"] for token_info in user["tokens"]]
+        assert data["access_token"] in token_values
 
     def test_refresh_with_invalid_token(self):
         """Test that refresh fails with an invalid refresh token"""
@@ -187,7 +192,8 @@ class TestLogout:
         
         # Verify the token was removed from the database
         user = db['users'].find_one({"_id": ObjectId(user_id)})
-        assert refresh_token not in user["tokens"]
+        token_values = [token_info["token"] for token_info in user["tokens"]]
+        assert refresh_token not in token_values
 
     def test_logout_with_invalid_token(self):
         """Test that logout fails with an invalid token"""
@@ -221,8 +227,13 @@ class TestLogout:
         
         # Verify only the refresh token was removed
         user = db['users'].find_one({"_id": ObjectId(user_id)})
-        assert refresh_token not in user["tokens"]
-        assert access_token in user["tokens"]
+        
+        # Extract token values from TokenInfo objects
+        token_values = [token_info["token"] for token_info in user["tokens"]]
+        
+        # Check refresh token was removed but access token still exists
+        assert refresh_token not in token_values
+        assert access_token in token_values
 
     def test_logout_with_both_tokens(self, mock_user_with_tokens):
         """Test that logout can invalidate both access and refresh tokens when provided"""
@@ -244,5 +255,9 @@ class TestLogout:
         
         # Verify both tokens were removed from the database
         user = db['users'].find_one({"_id": ObjectId(user_id)})
-        assert refresh_token not in user["tokens"]
-        assert access_token not in user["tokens"]
+        
+        # Extract token values from TokenInfo objects
+        token_values = [token_info["token"] for token_info in user["tokens"]]
+        
+        assert refresh_token not in token_values
+        assert access_token not in token_values
