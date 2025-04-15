@@ -69,6 +69,9 @@ def setup_logging():
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
     
+    # Lower the noise from pymongo
+    logging.getLogger('pymongo').setLevel(logging.WARNING)  # or logging.INFO
+
     # Return the configured logger
     return logger
 

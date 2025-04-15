@@ -30,9 +30,13 @@ def create_test_token(data: dict, expires_delta: timedelta = None, token_type: s
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
     return encoded_jwt
 
-# Set up a mock user for testing
 @pytest.fixture
 def mock_user():
+    """Creates a mock user in the database for testing purposes and returns the user ID.
+    This user will not have any tokens associated with it.
+    The user is created with a hashed password and other necessary fields.
+    The user is removed from the database after the test is completed.
+    """
     # Create a test user ID in ObjectId format
     user_id = str(ObjectId())
     
@@ -58,7 +62,8 @@ def mock_user():
     yield user_id
     
     # Clean up - remove the test user
-    db['users'].delete_one({"_id": ObjectId(user_id)})
+    # TODO: This is commented out for debuggingg purposes. Uncomment when ready to test for cereal.
+    # db['users'].delete_one({"_id": ObjectId(user_id)})
 
 @pytest.fixture
 def mock_user_with_tokens():

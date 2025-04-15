@@ -3,19 +3,32 @@ from app.main import app
 import pytest
 import os
 from bson.objectid import ObjectId
-from app.tests.test_utils import create_test_token, mock_user
+from app.tests.test_utils import create_test_token, mock_user, mock_user_with_tokens
 import io
 from app.auth import verify_password, get_password_hash
+from app.logger import setup_logging, get_logger
 
 client = TestClient(app)
+
+logger = get_logger(__name__)
+setup_logging()
+logger.debug("Starting test_api.py")
+logger.debug("Test API module loaded")
+logger.debug("Test client created")
 
 def test_read_main():
     response = client.get("/api/v1/healthcheck")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
-# Example CRUD endpoints tests
+# ********** Example CRUD endpoints tests **********
+
 def test_create_post(mock_user):
+    """Test creating a new post"""
+
+    logger.info("*****Starting test_create_post")
+    logger.debug("mock_user: %s", mock_user)
+
     # Generate a token with the correct format using the fixture
     token = create_test_token(
         data={"id": mock_user},  # Use "id" instead of "_id" to match application logic
@@ -248,32 +261,46 @@ def test_upload_post_image(create_test_post):
         os.remove(data["url"].replace("http://localhost:8000/", ""))
 
 # === User Profile Update Tests ===
-'''
 def test_get_current_user(mock_user):
     """Test getting the current user profile"""
-    # Create a token for authentication
-    token = create_test_token(data={"id": mock_user})
-    
-    # Add the token to the user's token list
     from app.database import db
     from datetime import datetime, timezone
     from jose import JWTError, jwt
     from app.auth import SECRET_KEY, ALGORITHM
-    
+
+    logger.info("*****Starting test_get_current_user")
+    logger.debug("mock_user: %s", mock_user)
+
+    # Create a token for authentication
+    # access_token = create_test_token(data={"id": mock_user})
+    access_token = create_test_token({"id": mock_user}, token_type="access")
+    logger.debug(f"Token: {access_token}")
+
+# app.tests.test_api - INFO - Starting test_get_current_user
+# asyncio - DEBUG - Using selector: KqueueSelector
+# app.auth - DEBUG - Validating token for authentication
+# app.auth - DEBUG - Verifying token for user ID: 67fc0320f077e4f723cba63e
+# app.auth - WARNING - Token validation failed: Token not found for user ID: 67fc0320f077e4f723cba63e
+
     # Get token expiration from the payload
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+    logger.debug(f"Decoded payload: {payload}")
     exp_timestamp = payload.get("exp")
     expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+    logger.debug(f"Token expires at: {expires_at}")
     
     # Add the token as a TokenInfo object (matching the schema)
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$set": {"tokens": [{"token": token, "expires_at": expires_at}]}}
+        {"$set": {"tokens": [{"token": access_token, "expires_at": expires_at}]}}
     )
     
+    # TODO: Audit ALL code reading and writing tokens, including the schema. They should all follow the above pattern.
+    # (An array of objects, each with a token and an expiration time)
+
     response = client.get(
         "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {token}"}
+        headers={"Authorization": f"Bearer {access_token}"}
     )
     
     assert response.status_code == 200
@@ -282,6 +309,7 @@ def test_get_current_user(mock_user):
     assert "email" in data
     assert data["id"] == mock_user
 
+'''
 def test_update_user_email(mock_user):
     """Test updating a user's email"""
     # Create a token for authentication

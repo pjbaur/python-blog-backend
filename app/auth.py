@@ -54,6 +54,9 @@ def authenticate_user(email: str, password: str):
     return user
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """Create an access token for the user."""
+    logger.debug("Creating access token")
+    logger.debug("Data for token: %s", data) # TODO remove in production
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire, "token_type": "access"})
@@ -100,9 +103,12 @@ def create_token_pair(data: dict) -> Tuple[str, str]:
 
 def verify_token(token: str, token_type: str = None):
     """Verify a token and return the payload if valid."""
+    logger.debug(f"Verifying token: {token}")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        logger.debug(f"Token payload: {payload}")
         user_id = payload.get("id")
+        logger.debug(f"Verifying token for user ID: {user_id}")
         if user_id is None:
             logger.warning("Token validation failed: Missing user ID in token")
             return None
