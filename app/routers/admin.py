@@ -23,6 +23,5 @@ async def admin_get_users(current_user: UserModel = Depends(auth.get_current_use
     
     logger.info(f"Returning data for {len(users)} users")
     logger.debug(f"Type of users: {type(users)}")
-    logger.debug(f"Data: {users}")
 
     return users

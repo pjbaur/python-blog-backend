@@ -24,7 +24,6 @@ def test_admin_get_users(mock_admin_user):
     )
     
     logger.debug(f"Response status code: {response.status_code}")
-    logger.debug(f"Response content: {response.content}")
 
     assert response.status_code == 200
     data = response.json()

@@ -5,17 +5,27 @@ from jose import jwt
 
 from app.main import app
 from app.tests.test_utils import mock_user, mock_user_with_tokens, create_test_token
-from app.auth import SECRET_KEY, verify_token, invalidate_token
+from app.auth import SECRET_KEY, verify_token
 from app.database import db
+from app.logger import setup_logging, get_logger
 from bson.objectid import ObjectId
 
 client = TestClient(app)
+
+logger = get_logger(__name__)
+setup_logging()
 
 class TestRefreshToken:
     """Test the refresh token functionality"""
 
     def test_login_returns_refresh_token(self):
-        """Test that login returns both access and refresh tokens"""
+        """Test that login returns both access and refresh tokens
+        
+        Down in the assetions, we check that the tokens are valid and belong to the user.
+        Where do the tokens come from? They are created in the login endpoint."""
+
+        logger.debug("*****Testing login_returns_refresh_token()")
+
         # Create a test user to login with
         from app.auth import get_password_hash
         
@@ -34,7 +44,9 @@ class TestRefreshToken:
         
         result = db['users'].insert_one(user_data)
         user_id = result.inserted_id
-        
+        logger.debug(f"Inserted user with ID: {user_id}")
+        logger.debug(f"User data: {user_data}")
+
         try:
             # Login with the user
             response = client.post(
@@ -45,6 +57,9 @@ class TestRefreshToken:
             # Check that the login was successful and returned both tokens
             assert response.status_code == 200
             data = response.json()
+
+            logger.debug(f"Login response data: {data}")
+
             assert "access_token" in data
             assert "refresh_token" in data
             assert data["token_type"] == "bearer"
@@ -52,6 +67,8 @@ class TestRefreshToken:
             # Verify the tokens are valid
             access_payload = verify_token(data["access_token"], token_type="access")
             refresh_payload = verify_token(data["refresh_token"], token_type="refresh")
+            logger.debug(f"Access payload: {access_payload}")
+            logger.debug(f"Refresh payload: {refresh_payload}")
             
             assert access_payload is not None
             assert refresh_payload is not None
@@ -60,6 +77,8 @@ class TestRefreshToken:
             
             # Verify tokens are stored in the database
             user = db['users'].find_one({"_id": user_id})
+            logger.debug(f"user: {user}")
+            logger.debug(f"User tokens: {user['tokens']}")
             
             # Check for tokens in TokenInfo format
             token_values = [token_info["token"] for token_info in user["tokens"]]
@@ -68,19 +87,39 @@ class TestRefreshToken:
             
         finally:
             # Clean up
-            db['users'].delete_one({"_id": user_id})
+            # TODO: Commented out for debugging, uncomment when done
+            pass
+            # db['users'].delete_one({"_id": user_id})
 
     def test_refresh_token_endpoint(self, mock_user_with_tokens):
-        """Test that the refresh token endpoint returns a new access token"""
-        refresh_token = mock_user_with_tokens["refresh_token"]
-        user_id = mock_user_with_tokens["user_id"]
+        """Test that the refresh token endpoint returns a new access token
         
+        Something in this test puts old style tokens in the database."""
+        logger.debug(f"*****Testing refresh_token_endpoint()")
+
+        refresh_token = mock_user_with_tokens["refresh_token"]
+        logger.debug(f"Refresh token: {refresh_token}")
+
+        user_id = mock_user_with_tokens["user_id"]
+        logger.debug(f"User ID: {user_id}")
+        
+        # At this point, the user object has the old style tokens in it.
+
+        # Dump the database document for user_id
+        user = db['users'].find_one({"_id": ObjectId(user_id)})
+        logger.debug(f"A-User: {user}")
+
         # Call the refresh endpoint
         response = client.post(
             "/api/v1/auth/refresh",
             json={"refresh_token": refresh_token}
         )
+        logger.debug(f"Response: {response}")
         
+        # Dump the database document for user_id
+        user = db['users'].find_one({"_id": ObjectId(user_id)})
+        logger.debug(f"B-User: {user}")
+
         # Check that the request was successful and returned a new access token
         assert response.status_code == 200
         data = response.json()
@@ -89,11 +128,15 @@ class TestRefreshToken:
         
         # Verify the new access token is valid
         new_access_payload = verify_token(data["access_token"], token_type="access")
+        # Dump the database document for user_id
+        user = db['users'].find_one({"_id": ObjectId(user_id)})
+        logger.debug(f"C-User: {user}")
         assert new_access_payload is not None
         assert new_access_payload["id"] == user_id
         
         # Verify the new access token is stored in the database
         user = db['users'].find_one({"_id": ObjectId(user_id)})
+        logger.debug(f"D-User: {user}")
         # Check for token in TokenInfo format
         token_values = [token_info["token"] for token_info in user["tokens"]]
         assert data["access_token"] in token_values

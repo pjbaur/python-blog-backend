@@ -5,9 +5,16 @@ from bson.objectid import ObjectId
 from fastapi.testclient import TestClient
 from app.main import app
 from app.database import db
+from app.logger import get_logger
+
+# Set up logger
+logger = get_logger(__name__)
 
 def create_test_token(data: dict, expires_delta: timedelta = None, token_type: str = "access"):
     """
+    This function creates tokens, and needs to be reconciled.
+    Are these the cool tokens with expiry dates, or the old ones?
+
     Create a JWT token for testing purposes.
     
     Args:
@@ -37,14 +44,17 @@ def mock_user():
     The user is created with a hashed password and other necessary fields.
     The user is removed from the database after the test is completed.
     """
+    logger.debug("Creating mock user")
+
     # Create a test user ID in ObjectId format
     user_id = str(ObjectId())
+    logger.debug(f"User ID: {user_id}")
     
     # Mock inserting the token in the database
     from app.database import db
     from app.auth import get_password_hash
     
-    # Create a test user with a token list
+    # Create a test user with an empty token list
     test_user = {
         "_id": ObjectId(user_id),
         "email": "testuser@example.com",
@@ -55,6 +65,7 @@ def mock_user():
         "updated_at": datetime.now(timezone.utc),
         "tokens": []
     }
+    logger.debug(f"Test user: {test_user}")
     
     # Insert the user in the database
     db['users'].insert_one(test_user)
@@ -62,7 +73,8 @@ def mock_user():
     yield user_id
     
     # Clean up - remove the test user
-    db['users'].delete_one({"_id": ObjectId(user_id)})
+    # TODO: Un-comment the following line to remove the test user after the test
+    # db['users'].delete_one({"_id": ObjectId(user_id)})
 
 @pytest.fixture
 def mock_admin_user():
@@ -111,13 +123,16 @@ def mock_admin_user():
     yield {"user_id": user_id, "token": token}
     
     # Clean up - remove the test admin user
-    db['users'].delete_one({"_id": ObjectId(user_id)})
+    # db['users'].delete_one({"_id": ObjectId(user_id)})
 
 @pytest.fixture
 def mock_user_with_tokens():
     """Creates a mock user with both access and refresh tokens in the database"""
+    logger.debug("Creating mock user with tokens")  
+
     # Create a test user ID in ObjectId format
     user_id = str(ObjectId())
+    logger.debug(f"User ID: {user_id}")
     
     # Get auth utilities
     from app.database import db
@@ -126,11 +141,13 @@ def mock_user_with_tokens():
     
     # Create test tokens
     access_token = create_test_token({"id": user_id}, token_type="access")
+    logger.debug(f"Access token: {access_token}")
     refresh_token = create_test_token(
         {"id": user_id}, 
         expires_delta=timedelta(days=7),
         token_type="refresh"
     )
+    logger.debug(f"Refresh token: {refresh_token}")
     
     # Get token expirations from the payloads
     access_payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -153,6 +170,7 @@ def mock_user_with_tokens():
             {"token": refresh_token, "expires_at": refresh_exp}
         ]
     }
+    logger.debug(f"Test user: {test_user}")
     
     # Insert the user in the database
     db['users'].insert_one(test_user)
@@ -160,4 +178,5 @@ def mock_user_with_tokens():
     yield {"user_id": user_id, "access_token": access_token, "refresh_token": refresh_token}
     
     # Clean up - remove the test user
-    db['users'].delete_one({"_id": ObjectId(user_id)})
+    # TODO: Un-comment the following line to remove the test user after the test
+    # db['users'].delete_one({"_id": ObjectId(user_id)})

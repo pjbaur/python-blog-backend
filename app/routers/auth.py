@@ -36,6 +36,12 @@ def register_user(user: schemas.UserCreate):
 # User Login
 @router.post("/login", response_model=schemas.Token)
 def login_user(login_data: schemas.LoginRequest):
+    """ Login endpoint for user authentication.
+
+    This endpoint uses tokens and needs to be reconciled.
+
+    I think the story starts here, because this creates the token and stores it in the database.
+    """
     logger.info(f"Login attempt for email: {login_data.email}")
     user = auth.authenticate_user(login_data.email, login_data.password)
     if not user:
@@ -47,12 +53,19 @@ def login_user(login_data: schemas.LoginRequest):
         data={"id": str(user.id)}
     )
     
+    logger.debug(f">>>>>Access token created: {access_token}")
+    logger.debug(f">>>>>Refresh token created: {refresh_token}")
+
     logger.info(f"Login successful for user: {login_data.email}")
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 # Implement refresh token endpoint
 @router.post("/refresh", response_model=schemas.Token)
 def refresh_token(refresh_data: schemas.RefreshTokenRequest):
+    """ Refresh token endpoint.
+
+    This endpoint uses tokens and needs to be reconciled.
+    """
     logger.info("Token refresh requested")
     
     # Verify the refresh token
@@ -82,6 +95,9 @@ def refresh_token(refresh_data: schemas.RefreshTokenRequest):
 # Implement logout endpoint
 @router.post("/logout", status_code=204)
 def logout_user(logout_data: schemas.LogoutRequest):
+    """ Logout endpoint.
+    This endpoint uses tokens and needs to be reconciled.
+    """
     logger.info("Logout requested")
     
     # Verify the refresh token

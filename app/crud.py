@@ -56,6 +56,11 @@ def get_user_by_id(user_id: str):
         raise
 
 def get_all_users():
+    """
+    Retrieve all users from the database.
+    This function handles legacy token formats by converting string tokens to TokenInfo objects.
+    
+    TODO: I want to remove the legacy token format."""
     logger.info("Retrieving all users")
     users = []
     try:

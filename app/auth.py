@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from .database import db
-from .models import UserModel
+from .models import UserModel, TokenInfo
 from bson.objectid import ObjectId
 import os
 import dotenv
@@ -64,13 +64,17 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     # Store the token as TokenInfo object with token and expiry
     users_collection.update_one(
         {"_id": ObjectId(data["id"])},
-        {"$push": {"tokens": {"token": encoded_jwt, "expires_at": expire}}}
+        {"$push": {"tokens": encoded_jwt}}
     )
     logger.debug(f"Access token created for user ID: {data['id']}, expires: {expire}")
     return encoded_jwt
 
 def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """Create a refresh token for the user."""
+    """Create a refresh token for the user.
+    
+    Who calls this?
+      Just create_token_pair() - below
+    """
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(days=7))
     to_encode.update({"exp": expire, "token_type": "refresh"})
@@ -78,13 +82,15 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     # Store the refresh token as TokenInfo object with token and expiry
     users_collection.update_one(
         {"_id": ObjectId(data["id"])},
-        {"$push": {"tokens": {"token": encoded_jwt, "expires_at": expire}}}
+        {"$push": {"tokens": encoded_jwt}}
     )
     logger.debug(f"Refresh token created for user ID: {data['id']}, expires: {expire}")
     return encoded_jwt
 
 def create_token_pair(data: dict) -> Tuple[str, str]:
-    """Create both access and refresh tokens for a user."""
+    """Create both access and refresh tokens for a user.
+    
+    I think these are the good tokens - they have expiry dates, right?"""
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     
@@ -98,15 +104,22 @@ def create_token_pair(data: dict) -> Tuple[str, str]:
         expires_delta=refresh_token_expires
     )
     
-    logger.info(f"Token pair created for user ID: {data['id']}")
+    logger.info(f"/////Token pair created for user ID: {data['id']}")
+    logger.debug(f"Access token: {access_token}")
+    logger.debug(f"Refresh token: {refresh_token}")
     return access_token, refresh_token
 
 def verify_token(token: str, token_type: str = None):
-    """Verify a token and return the payload if valid."""
+    """Verify a token and return the payload if valid.
+    This function checks if the token is valid and if it exists in the user's token list.
+    It also checks if the token type matches the expected type (access or refresh).
+    If the token is valid, it returns the payload; otherwise, it returns None.
+    """
     logger.debug(f"Verifying token: {token}")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         logger.debug(f"Token payload: {payload}")
+
         user_id = payload.get("id")
         logger.debug(f"Verifying token for user ID: {user_id}")
         if user_id is None:
@@ -119,7 +132,8 @@ def verify_token(token: str, token_type: str = None):
             return None
             
         # Check if token exists in user's token list (now in TokenInfo format)
-        user = users_collection.find_one({"_id": ObjectId(user_id), "tokens.token": token})
+        # Is this checking all tokens in the token field?
+        user = users_collection.find_one({"_id": ObjectId(user_id), "tokens": token})
         if not user:
             logger.warning(f"Token validation failed: Token not found for user ID: {user_id}")
             return None
@@ -131,7 +145,13 @@ def verify_token(token: str, token_type: str = None):
         return None
 
 def invalidate_token(token: str):
-    """Remove a token from the user's token list."""
+    """Remove a token from the user's token list.
+    This function expects a token string, as opposed to a TokenInfo object.
+    I'm not sure if I'm going to stick with this approach or not.
+    
+    Who calls this function?
+      In this module: invalidate_tokens()
+    """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("id")
@@ -147,7 +167,14 @@ def invalidate_token(token: str):
     return False
 
 def invalidate_tokens(tokens: list):
-    """Remove multiple tokens from the user's token list."""
+    """Remove multiple tokens from the user's token list.
+    
+    What format do the tokens have?
+    Can we enforce the format of the tokens?
+    
+    Who calls this function?
+      app/routers/auth.py::logout_user()
+    """
     if not tokens or len(tokens) == 0:
         logger.warning("No tokens provided for invalidation")
         return False
