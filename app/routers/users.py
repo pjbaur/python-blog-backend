@@ -5,7 +5,6 @@ from ..logger import get_logger
 from typing import List
 from datetime import datetime, timezone
 
-# Set up logger
 logger = get_logger(__name__)
 
 router = APIRouter(

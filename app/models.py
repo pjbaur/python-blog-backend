@@ -35,7 +35,7 @@ class UserModel(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     is_active: bool = True
     is_admin: bool = False
-    tokens: List[TokenInfo] = []
+    tokens: List[str] = []
 
 class PostModel(BaseModel):
     id: Optional[ObjectIdStr] = Field(None, alias='_id')

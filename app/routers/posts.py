@@ -7,7 +7,6 @@ from typing import List, Optional
 import os
 import uuid
 
-# Set up logger
 logger = get_logger(__name__)
 
 router = APIRouter(

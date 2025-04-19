@@ -28,7 +28,7 @@ class UserResponse(UserBase):
     id: str
     is_active: bool
     is_admin: bool
-    tokens: Optional[List[TokenInfo]] = None
+    tokens: Optional[List[str]] = None
 
     class Config:
         orm_mode = True

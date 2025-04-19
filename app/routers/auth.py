@@ -4,7 +4,6 @@ from ..models import UserModel
 from datetime import timedelta, datetime, timezone
 from ..logger import get_logger
 
-# Set up logger
 logger = get_logger(__name__)
 
 router = APIRouter(
@@ -98,7 +97,7 @@ def logout_user(logout_data: schemas.LogoutRequest):
     """ Logout endpoint.
     This endpoint uses tokens and needs to be reconciled.
     """
-    logger.info("Logout requested")
+    logger.info("routers/auth.py::logout_user() -- Logout requested")
     
     # Verify the refresh token
     payload = auth.verify_token(logout_data.refresh_token)
@@ -106,6 +105,8 @@ def logout_user(logout_data: schemas.LogoutRequest):
         logger.warning("Invalid refresh token during logout")
         raise HTTPException(status_code=401, detail="Invalid token")
     
+    logger.debug("payload: ", payload)
+
     # Prepare tokens to invalidate
     tokens_to_invalidate = [logout_data.refresh_token]
     

@@ -52,7 +52,7 @@ def setup_logging():
     logger.setLevel(LOG_LEVELS.get(log_level, logging.INFO))
     
     # Configure formatter
-    formatter = logging.Formatter(log_format, log_date_format)
+    formatter = logging.Formatter(log_format)
     
     # Configure file handler with rotation
     file_handler = logging.handlers.RotatingFileHandler(

@@ -13,7 +13,6 @@ from bson.objectid import ObjectId
 client = TestClient(app)
 
 logger = get_logger(__name__)
-setup_logging()
 
 class TestRefreshToken:
     """Test the refresh token functionality"""
@@ -81,15 +80,13 @@ class TestRefreshToken:
             logger.debug(f"User tokens: {user['tokens']}")
             
             # Check for tokens in TokenInfo format
-            token_values = [token_info["token"] for token_info in user["tokens"]]
+            token_values = user["tokens"]
             assert data["access_token"] in token_values
             assert data["refresh_token"] in token_values
             
         finally:
             # Clean up
-            # TODO: Commented out for debugging, uncomment when done
-            pass
-            # db['users'].delete_one({"_id": user_id})
+            db['users'].delete_one({"_id": user_id})
 
     def test_refresh_token_endpoint(self, mock_user_with_tokens):
         """Test that the refresh token endpoint returns a new access token
@@ -137,8 +134,8 @@ class TestRefreshToken:
         # Verify the new access token is stored in the database
         user = db['users'].find_one({"_id": ObjectId(user_id)})
         logger.debug(f"D-User: {user}")
-        # Check for token in TokenInfo format
-        token_values = [token_info["token"] for token_info in user["tokens"]]
+        # Check for token in str format
+        token_values = user["tokens"]
         assert data["access_token"] in token_values
 
     def test_refresh_with_invalid_token(self):
@@ -214,7 +211,6 @@ class TestRefreshToken:
         assert response.status_code == 401
         assert "Invalid or expired refresh token" in response.json()["detail"]
 
-
 class TestLogout:
     """Test the logout functionality"""
 
@@ -235,7 +231,7 @@ class TestLogout:
         
         # Verify the token was removed from the database
         user = db['users'].find_one({"_id": ObjectId(user_id)})
-        token_values = [token_info["token"] for token_info in user["tokens"]]
+        token_values = user["tokens"]
         assert refresh_token not in token_values
 
     def test_logout_with_invalid_token(self):
@@ -272,7 +268,7 @@ class TestLogout:
         user = db['users'].find_one({"_id": ObjectId(user_id)})
         
         # Extract token values from TokenInfo objects
-        token_values = [token_info["token"] for token_info in user["tokens"]]
+        token_values = user["tokens"]
         
         # Check refresh token was removed but access token still exists
         assert refresh_token not in token_values

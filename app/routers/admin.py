@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from .. import auth, crud, schemas
 from ..models import UserModel
 from datetime import datetime
-from ..logger import get_logger
+from app.logger import setup_logging, get_logger
 
-# Set up logger
 logger = get_logger(__name__)
 
 router = APIRouter(

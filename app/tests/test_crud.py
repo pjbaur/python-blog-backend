@@ -14,7 +14,6 @@ from app.crud import (
     get_filtered_posts, get_posts_by_category, get_posts_by_author_and_category
 )
 
-
 # ===== User CRUD Tests =====
 
 @pytest.fixture
@@ -201,7 +200,6 @@ class TestUserCRUD:
         
         # Verify
         assert result.deleted_count == 0
-
 
 # ===== Post CRUD Tests =====
 

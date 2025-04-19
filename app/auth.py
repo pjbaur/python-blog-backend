@@ -11,7 +11,6 @@ import os
 import dotenv
 from .logger import get_logger
 
-# Set up logger
 logger = get_logger(__name__)
 
 dotenv.load_dotenv()
@@ -153,14 +152,22 @@ def invalidate_token(token: str):
       In this module: invalidate_tokens()
     """
     try:
+        logger.debug("invalidate_token() -- Invalidating token: %s", token)
+
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("id")
+
+        # Show the db user before and after the update
+        user_before = users_collection.find_one({"_id": ObjectId(user_id)})
+        logger.debug(f"User before update: {user_before}")
         if user_id:
             result = users_collection.update_one(
                 {"_id": ObjectId(user_id)},
-                {"$pull": {"tokens": {"token": token}}}
+                {"$pull": {"tokens": token}}
             )
-            logger.info(f"Token invalidated for user ID: {user_id}, modified: {result.modified_count}")
+            user_after = users_collection.find_one({"_id": ObjectId(user_id)})
+            logger.debug(f"User after update: {user_after}")
+            logger.debug(f"Token invalidated for user ID: {user_id}, modified: {result.modified_count}")
             return result.modified_count > 0
     except JWTError as e:
         logger.warning(f"Token invalidation failed: JWT Error: {str(e)}")

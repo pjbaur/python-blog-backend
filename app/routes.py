@@ -2,7 +2,6 @@ from fastapi import APIRouter
 from .logger import get_logger
 from .routers import auth, users, admin, posts
 
-# Set up logger
 logger = get_logger(__name__)
 
 # Create main API router with /api/v1 prefix

@@ -11,7 +11,7 @@ from app.logger import setup_logging, get_logger
 client = TestClient(app)
 
 logger = get_logger(__name__)
-setup_logging()
+
 logger.debug("Starting test_api.py")
 logger.debug("Test API module loaded")
 logger.debug("Test client created")
@@ -46,7 +46,7 @@ def test_create_post(mock_user):
     from app.database import db
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": {"token": token, "expires_at": expires_at}}}
+        {"$push": {"tokens": token}}
     )
     
     test_post = {
@@ -89,7 +89,7 @@ def create_test_post(mock_user):
     from app.database import db
     db['users'].update_one(
         {"_id": ObjectId(mock_user)},
-        {"$push": {"tokens": {"token": token, "expires_at": expires_at}}}
+        {"$push": {"tokens": token}}
     )
     
     # Create a test post with full schema

@@ -7,7 +7,6 @@ from app.main import app
 from app.database import db
 from app.logger import get_logger
 
-# Set up logger
 logger = get_logger(__name__)
 
 def create_test_token(data: dict, expires_delta: timedelta = None, token_type: str = "access"):
@@ -73,8 +72,7 @@ def mock_user():
     yield user_id
     
     # Clean up - remove the test user
-    # TODO: Un-comment the following line to remove the test user after the test
-    # db['users'].delete_one({"_id": ObjectId(user_id)})
+    db['users'].delete_one({"_id": ObjectId(user_id)})
 
 @pytest.fixture
 def mock_admin_user():
@@ -117,17 +115,19 @@ def mock_admin_user():
     # Add the token as a TokenInfo object (matching the schema)
     db['users'].update_one(
         {"_id": ObjectId(user_id)},
-        {"$push": {"tokens": {"token": token, "expires_at": expires_at}}}
+        {"$push": {"tokens": token}}
     )
     
     yield {"user_id": user_id, "token": token}
     
     # Clean up - remove the test admin user
-    # db['users'].delete_one({"_id": ObjectId(user_id)})
+    db['users'].delete_one({"_id": ObjectId(user_id)})
 
 @pytest.fixture
 def mock_user_with_tokens():
-    """Creates a mock user with both access and refresh tokens in the database"""
+    """Creates a mock user with both access and refresh tokens in the database
+    
+    I think this is creating old style tokens, not the new ones."""
     logger.debug("Creating mock user with tokens")  
 
     # Create a test user ID in ObjectId format
@@ -165,10 +165,7 @@ def mock_user_with_tokens():
         "is_admin": False,
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
-        "tokens": [
-            {"token": access_token, "expires_at": access_exp},
-            {"token": refresh_token, "expires_at": refresh_exp}
-        ]
+        "tokens": [ access_token, refresh_token ]
     }
     logger.debug(f"Test user: {test_user}")
     
@@ -178,5 +175,4 @@ def mock_user_with_tokens():
     yield {"user_id": user_id, "access_token": access_token, "refresh_token": refresh_token}
     
     # Clean up - remove the test user
-    # TODO: Un-comment the following line to remove the test user after the test
-    # db['users'].delete_one({"_id": ObjectId(user_id)})
+    db['users'].delete_one({"_id": ObjectId(user_id)})

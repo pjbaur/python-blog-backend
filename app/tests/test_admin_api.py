@@ -9,7 +9,6 @@ from app.logger import setup_logging, get_logger
 client = TestClient(app)
 
 logger = get_logger(__name__)
-setup_logging()
 
 def test_admin_get_users(mock_admin_user):
     """Test that admin users can access the /admin/users endpoint"""
@@ -58,7 +57,7 @@ def test_non_admin_get_users(mock_user):
     )
     
     # Should return a 403 Forbidden status
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 def test_unauthorized_admin_access():
     """Test that unauthorized requests cannot access admin endpoints"""
