@@ -18,12 +18,9 @@ class TestRefreshToken:
     """Test the refresh token functionality"""
 
     def test_login_returns_refresh_token(self):
-        """Test that login returns both access and refresh tokens
-        
-        Down in the assetions, we check that the tokens are valid and belong to the user.
-        Where do the tokens come from? They are created in the login endpoint."""
+        """Test that login returns both access and refresh tokens"""
 
-        logger.debug("*****Testing login_returns_refresh_token()")
+        logger.debug("Testing login_returns_refresh_token()")
 
         # Create a test user to login with
         from app.auth import get_password_hash
@@ -89,10 +86,8 @@ class TestRefreshToken:
             db['users'].delete_one({"_id": user_id})
 
     def test_refresh_token_endpoint(self, mock_user_with_tokens):
-        """Test that the refresh token endpoint returns a new access token
-        
-        Something in this test puts old style tokens in the database."""
-        logger.debug(f"*****Testing refresh_token_endpoint()")
+        """Test that the refresh token endpoint returns a new access token"""
+        logger.debug(f"Testing refresh_token_endpoint()")
 
         refresh_token = mock_user_with_tokens["refresh_token"]
         logger.debug(f"Refresh token: {refresh_token}")

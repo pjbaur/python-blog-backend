@@ -2,7 +2,7 @@ from .models import UserModel, PostModel
 from .database import db
 from bson.objectid import ObjectId
 from .logger import get_logger
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from datetime import timedelta
 
 logger = get_logger(__name__)
@@ -55,11 +55,7 @@ def get_user_by_id(user_id: str):
         raise
 
 def get_all_users():
-    """
-    Retrieve all users from the database.
-    This function handles legacy token formats by converting string tokens to TokenInfo objects.
-    
-    TODO: I want to remove the legacy token format."""
+    """Retrieve all users from the database."""
     logger.info("app/crud.py get_all_users()")
     try:
         users = []

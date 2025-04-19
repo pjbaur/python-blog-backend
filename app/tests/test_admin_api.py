@@ -1,10 +1,9 @@
 from fastapi.testclient import TestClient
 from app.main import app
-from datetime import datetime, timezone
 import pytest
 from bson.objectid import ObjectId
 from app.tests.test_utils import create_test_token, mock_user, mock_user_with_tokens, mock_admin_user
-from app.logger import setup_logging, get_logger
+from app.logger import get_logger
 
 client = TestClient(app)
 
@@ -12,7 +11,7 @@ logger = get_logger(__name__)
 
 def test_admin_get_users(mock_admin_user):
     """Test that admin users can access the /admin/users endpoint"""
-    logger.debug("*****Testing admin access to /admin/users endpoint")  
+    logger.debug("Testing admin access to /admin/users endpoint")  
     
     token = mock_admin_user["token"]
     logger.debug(f"Using token: {token}")
@@ -39,7 +38,7 @@ def test_admin_get_users(mock_admin_user):
 def test_non_admin_get_users(mock_user):
     """Test that non-admin users cannot access the /admin/users endpoint"""
     # Create a token for the non-admin user
-    logger.debug("*****Testing non-admin access to /admin/users endpoint")
+    logger.debug("Testing non-admin access to /admin/users endpoint")
 
     token = create_test_token(data={"id": mock_user})
     logger.debug(f"Using token: {token}")

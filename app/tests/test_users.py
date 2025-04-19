@@ -23,9 +23,7 @@ def test_read_main():
 
 # === User Profile Update Tests ===
 def test_get_current_user(mock_user):
-    """Test getting the current user profile
-    
-    This creates good tokens."""
+    """Test getting the current user profile"""
     from app.database import db
     from datetime import datetime, timezone
     from jose import JWTError, jwt
@@ -66,7 +64,7 @@ def test_get_current_user(mock_user):
 def create_second_user():
     """Create a second user for duplicate email testing"""
 
-    logger.debug("*****Starting create_second_user")
+    logger.debug("Starting create_second_user")
 
     # Create a test user ID in ObjectId format
     user_id = str(ObjectId())
@@ -96,9 +94,7 @@ def create_second_user():
     db['users'].delete_one({"_id": ObjectId(user_id)})
 
 def test_update_email_already_taken(mock_user, create_second_user):
-    """Test attempting to update to an email that's already taken by another user
-    
-    This creates good tokens."""
+    """Test attempting to update to an email that's already taken by another user"""
     from app.database import db
     from datetime import datetime, timezone
     from jose import jwt
@@ -159,9 +155,7 @@ def test_update_user_unauthorized():
 
 # Test update_current_user function
 def test_update_current_user(mock_user):
-    """Test updating the current user's profile
-    
-    This creates good tokens."""
+    """Test updating the current user's profile"""
     
     from app.database import db
     from datetime import datetime, timezone
