@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 from .logger import get_logger
 
-# Set up logger
 logger = get_logger(__name__)
 
 load_dotenv()

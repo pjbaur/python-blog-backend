@@ -6,13 +6,12 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from .database import db
-from .models import UserModel
+from .models import UserModel, TokenInfo
 from bson.objectid import ObjectId
 import os
 import dotenv
 from .logger import get_logger
 
-# Set up logger
 logger = get_logger(__name__)
 
 dotenv.load_dotenv()
@@ -55,11 +54,14 @@ def authenticate_user(email: str, password: str):
     return user
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """Create an access token for the user."""
+    logger.debug("Creating access token")
+    logger.debug("Data for token: %s", data) # TODO remove in production
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire, "token_type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    # Store the token in the user's token list for invalidation
+    # Store the token as a string
     users_collection.update_one(
         {"_id": ObjectId(data["id"])},
         {"$push": {"tokens": encoded_jwt}}
@@ -73,7 +75,7 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(days=7))
     to_encode.update({"exp": expire, "token_type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    # Store the refresh token in the user's token list
+    # Store the refresh token as a string
     users_collection.update_one(
         {"_id": ObjectId(data["id"])},
         {"$push": {"tokens": encoded_jwt}}
@@ -96,14 +98,24 @@ def create_token_pair(data: dict) -> Tuple[str, str]:
         expires_delta=refresh_token_expires
     )
     
-    logger.info(f"Token pair created for user ID: {data['id']}")
+    logger.debug(f"Token pair created for user ID: {data['id']}")
+    logger.debug(f"Access token: {access_token}")
+    logger.debug(f"Refresh token: {refresh_token}")
     return access_token, refresh_token
 
 def verify_token(token: str, token_type: str = None):
-    """Verify a token and return the payload if valid."""
+    """Verify a token and return the payload if valid.
+    This function checks if the token is valid and if it exists in the user's token list.
+    It also checks if the token type matches the expected type (access or refresh).
+    If the token is valid, it returns the payload; otherwise, it returns None.
+    """
+    logger.debug(f"Verifying token: {token}")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        logger.debug(f"Token payload: {payload}")
+
         user_id = payload.get("id")
+        logger.debug(f"Verifying token for user ID: {user_id}")
         if user_id is None:
             logger.warning("Token validation failed: Missing user ID in token")
             return None
@@ -113,17 +125,9 @@ def verify_token(token: str, token_type: str = None):
             logger.warning(f"Token validation failed: Expected {token_type} token but got {payload.get('token_type')}")
             return None
             
-        # Check if token exists in user's tokens list - check both formats:
-        # 1. As a string token directly in the list
-        # 2. As part of a TokenInfo object with {token: token, expires_at: date}
-        user = users_collection.find_one(
-            {"_id": ObjectId(user_id), 
-             "$or": [
-                 {"tokens": token},  # Old format: direct token string
-                 {"tokens.token": token}  # New format: token inside TokenInfo object
-             ]
-            }
-        )
+        # Check if token exists in user's token list (now in TokenInfo format)
+        # Is this checking all tokens in the token field?
+        user = users_collection.find_one({"_id": ObjectId(user_id), "tokens": token})
         if not user:
             logger.warning(f"Token validation failed: Token not found for user ID: {user_id}")
             return None
@@ -137,8 +141,14 @@ def verify_token(token: str, token_type: str = None):
 def invalidate_token(token: str):
     """Remove a token from the user's token list."""
     try:
+        logger.debug("invalidate_token() -- Invalidating token: %s", token)
+
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("id")
+
+        # Show the db user before and after the update
+        user_before = users_collection.find_one({"_id": ObjectId(user_id)})
+        logger.debug(f"User before update: {user_before}")
         if user_id:
             # Try to remove the token in both formats
             # 1. First try to remove as direct token string
@@ -146,15 +156,9 @@ def invalidate_token(token: str):
                 {"_id": ObjectId(user_id)},
                 {"$pull": {"tokens": token}}
             )
-            
-            # 2. Then try to remove as part of TokenInfo object
-            if result.modified_count == 0:
-                result = users_collection.update_one(
-                    {"_id": ObjectId(user_id)},
-                    {"$pull": {"tokens": {"token": token}}}
-                )
-                
-            logger.info(f"Token invalidated for user ID: {user_id}, modified: {result.modified_count}")
+            user_after = users_collection.find_one({"_id": ObjectId(user_id)})
+            logger.debug(f"User after update: {user_after}")
+            logger.debug(f"Token invalidated for user ID: {user_id}, modified: {result.modified_count}")
             return result.modified_count > 0
     except PyJWTError as e:
         logger.warning(f"Token invalidation failed: JWT Error: {str(e)}")

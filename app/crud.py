@@ -2,9 +2,9 @@ from .models import UserModel, PostModel
 from .database import db
 from bson.objectid import ObjectId
 from .logger import get_logger
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
+from datetime import timedelta
 
-# Set up logger
 logger = get_logger(__name__)
 
 users_collection = db['users']
@@ -55,12 +55,13 @@ def get_user_by_id(user_id: str):
         raise
 
 def get_all_users():
-    logger.info("Retrieving all users")
-    users = []
+    """Retrieve all users from the database."""
+    logger.info("app/crud.py get_all_users()")
     try:
+        users = []
         for user_data in users_collection.find():
+            logger.debug(f"Found user: {user_data}")
             users.append(UserModel(**user_data))
-        logger.info(f"Retrieved {len(users)} users")
         return users
     except Exception as e:
         logger.error(f"Error retrieving all users: {str(e)}")

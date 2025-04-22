@@ -15,6 +15,12 @@ class UserUpdate(BaseModel):
 
 # Token Info Schema
 class TokenInfo(BaseModel):
+    """Schema for storing token information.
+    
+    See Also: app/models.py::TokenInfo
+    
+    Can this be used for both access and refresh tokens?
+    Should I have different schemas for access and refresh tokens?"""
     token: str
     expires_at: datetime
 
@@ -22,7 +28,7 @@ class UserResponse(UserBase):
     id: str
     is_active: bool
     is_admin: bool
-    tokens: Optional[List[TokenInfo]] = None
+    tokens: Optional[List[str]] = None
 
     class Config:
         orm_mode = True
@@ -42,6 +48,13 @@ class LoginRequest(BaseModel):
 
 # Token Schemas
 class Token(BaseModel):
+    """ Schema for the token response from the authentication endpoint.
+    This schema is used to parse the response from the authentication endpoint
+    and extract the access token, refresh token, and token type.
+    
+    If access and refresh tokens are not interchangable, then this schema should not exist.
+    TODO: Read-up on JWTs.
+    """
     access_token: str
     refresh_token: Optional[str] = None
     token_type: str
