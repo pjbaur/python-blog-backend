@@ -71,14 +71,14 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 ### Authentication
 - POST /api/v1/auth/register — Register a new user
 - POST /api/v1/auth/login — Login user (returns access and refresh tokens)
-- POST /api/v1/auth/refresh — Refresh token
-- POST /api/v1/auth/logout — Logout user
+- POST /api/v1/auth/refresh — Refresh access token using refresh token
+- POST /api/v1/auth/logout — Logout user (invalidates tokens)
 
 ### Users
 - GET /api/v1/users/me — Get current user information
 - PUT /api/v1/users/me — Update current user information
 - GET /api/v1/users/{user_id} — Get user by ID
-- GET /api/v1/users/{user_id}/posts — Get posts by user
+- GET /api/v1/users/{user_id}/posts — Get posts by user (with pagination and sorting)
 
 ### Admin
 - GET /api/v1/admin/users — Get all users (admin only)
@@ -87,10 +87,16 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 - POST /api/v1/posts — Create a new post
 - GET /api/v1/posts — Get all posts (with filters, pagination, and sorting)
 - GET /api/v1/posts/{post_id} — Get post by ID
-- PUT /api/v1/posts/{post_id} — Update post
-- DELETE /api/v1/posts/{post_id} — Delete post
-- GET /api/v1/posts/user/{author_id} — Get posts by author (deprecated)
+- PUT /api/v1/posts/{post_id} — Update post (requires ownership)
+- DELETE /api/v1/posts/{post_id} — Delete post (requires ownership)
+- GET /api/v1/posts/user/{author_id} — Get posts by author (deprecated, use /api/v1/users/{user_id}/posts instead)
 - POST /api/v1/posts/{post_id}/images — Upload post image
+- GET /api/v1/posts/{post_id}/comments — Get comments for a post
+- POST /api/v1/posts/{post_id}/comments — Create a comment on a post
+
+### Comments
+- PUT /api/v1/comments/{comment_id} — Update a comment (requires ownership)
+- DELETE /api/v1/comments/{comment_id} — Delete a comment (requires ownership)
 
 ## Development
 
