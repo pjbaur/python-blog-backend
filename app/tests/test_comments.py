@@ -72,7 +72,7 @@ def create_test_post_with_comment(mock_user):
     }
     
     # Clean up - remove the test post (and its comments)
-    # db['posts'].delete_one({"_id": ObjectId(post_id)})
+    db['posts'].delete_one({"_id": ObjectId(post_id)})
 
 @pytest.fixture
 def create_test_post_with_nested_comments(mock_user):

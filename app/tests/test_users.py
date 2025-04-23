@@ -189,9 +189,6 @@ def test_update_current_user(mock_user):
     tokens = user_after["tokens"]
     assert len(tokens) == 1
     assert tokens[0] == token
-    # FAILED app/tests/test_users.py::test_update_current_user - 
-    #   assert datetime.datetime(2025, 4, 15, 18, 11, 11) == 
-    #     datetime.datetime(2025, 4, 15, 18, 11, 11, tzinfo=datetime.timezone...
     # assert tokens[0]["expires_at"] == expires_at
     
     # Verify token was removed from other users
