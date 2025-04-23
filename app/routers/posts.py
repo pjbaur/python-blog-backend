@@ -6,6 +6,7 @@ from ..logger import get_logger
 from typing import List, Optional
 import os
 import uuid
+from bson.objectid import ObjectId
 
 logger = get_logger(__name__)
 
@@ -254,8 +255,10 @@ async def create_post_comment(
             logger.warning(f"Parent comment not found with ID: {comment_data.parent_id}")
             raise HTTPException(status_code=404, detail="Parent comment not found")
     
-    # Create comment object
+    # Create comment object with a new ObjectId
+    comment_id = ObjectId()
     comment = {
+        "_id": comment_id,
         "author_id": str(current_user.id),
         "content": comment_data.content,
         "created_at": datetime.now(timezone.utc),
@@ -270,25 +273,24 @@ async def create_post_comment(
     logger.debug(f">>>>>Comment data before saving to database: {comment}")
 
     # Save comment to database
-    created_comment = crud.create_comment(post_id, comment)
+    result = crud.create_comment(post_id, comment)
     
-    logger.debug(f">>>>>Created comment: {created_comment}")
+    logger.debug(f">>>>>Created comment result: {result}")
 
-    if not created_comment or created_comment.modified_count == 0:
+    if not result or result.modified_count == 0:
         logger.error(f"Failed to create comment for post: {post_id}")
         raise HTTPException(status_code=500, detail="Failed to create comment")
     
     logger.debug(f">>>>>Comment created for post: {post_id}")
     
-    # Return the created comment
-    # I think this isn't returning the contract: response_model=schemas.CommentResponse
-    # class CommentResponse(BaseModel):
-    #     id: str
-    #     post_id: str
-    #     author_id: str
-    #     content: str
-    #     parent_id: Optional[str] = None
-    #     created_at: datetime
-    #     updated_at: Optional[datetime] = None
-    #     is_published: bool = True
-    return created_comment
+    # Return the created comment as a CommentResponse object
+    return schemas.CommentResponse(
+        id=str(comment_id),
+        post_id=post_id,
+        author_id=comment["author_id"],
+        content=comment["content"],
+        parent_id=comment.get("parent_id"),
+        created_at=comment["created_at"],
+        updated_at=comment.get("updated_at"),
+        is_published=comment.get("is_published", True)
+    )
