@@ -102,11 +102,32 @@ class CommentResponse(BaseModel):
     post_id: str
     author_id: str
     content: str
-    parent_id: Optional[str]
+    parent_id: Optional[str] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
+    is_published: bool = True
+    # is_edited: bool = False
+    # is_deleted: bool = False
+    # is_approved: bool = False
+    # is_spam: bool = False
+    # is_flagged: bool = False
+    # is_archived: bool = False
+    # is_hidden: bool = False
 
     class Config:
         orm_mode = True
+
+class CommentUpdateRequest(BaseModel):
+    content: Optional[str] = None
+    parent_id: Optional[str] = None
+    is_published: Optional[bool] = None
+    # is_edited: Optional[bool] = None
+    # is_deleted: Optional[bool] = None
+    # is_approved: Optional[bool] = None
+    # is_spam: Optional[bool] = None
+    # is_flagged: Optional[bool] = None
+    # is_archived: Optional[bool] = None
+    # is_hidden: Optional[bool] = None
 
 # Image Schemas
 class ImageResponse(BaseModel):

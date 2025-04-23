@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from .logger import get_logger
-from .routers import auth, users, admin, posts
+from .routers import auth, users, admin, posts, comments
 
 logger = get_logger(__name__)
 
@@ -18,3 +18,4 @@ router.include_router(auth.router)
 router.include_router(users.router)
 router.include_router(admin.router)
 router.include_router(posts.router)
+router.include_router(comments.router)

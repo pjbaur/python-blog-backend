@@ -105,6 +105,8 @@ def create_post(post: PostModel):
         insert_result = posts_collection.insert_one(post_dict)
         post.id = str(insert_result.inserted_id)
         logger.info(f"Post created with ID: {post.id}")
+        logger.debug(f"////Post: {post}")
+        logger.debug(f"////insert_result: {insert_result}")
         return post
     except Exception as e:
         logger.error(f"Error creating post: {str(e)}")
@@ -238,3 +240,82 @@ def get_posts_by_author_and_category(author_id: str, category_id: int, limit: in
         logger.error(f"Error retrieving posts by author and category: {str(e)}")
         raise
 
+# Comment CRUD operations
+def create_comment(post_id: str, comment: Dict[str, Any]):
+    logger.info(f"Creating comment for post ID: {post_id}")
+    try:
+        comment["post_id"] = post_id
+        # This is inserting the comment into the post's comments array!
+        # Is this the behavior we want? Sounds good, but need to make sure the rest of the app expects this (including schema and model).
+        # The comment should have a unique ID, so we can use ObjectId() to generate one.
+        insert_result = posts_collection.update_one({"_id": ObjectId(post_id)}, {"$push": {"comments": comment}})
+        if insert_result.modified_count > 0:
+            logger.info(f"Comment added to post: {post_id}")
+        else:
+            logger.warning(f"No changes made to post: {post_id}")
+        # Is this what should be returned?
+        # UpdateResult({'n': 1, 'nModified': 1, 'ok': 1.0, 'updatedExisting': True}, acknowledged=True)
+        logger.debug(f"+++++insert_result: {insert_result}")
+        return insert_result
+    except Exception as e:
+        logger.error(f"Error creating comment for post {post_id}: {str(e)}")
+        raise
+
+def get_comments_for_post(post_id: str):
+    logger.info(f"Retrieving comments for post ID: {post_id}")
+    try:
+        post_data = posts_collection.find_one({"_id": ObjectId(post_id)})
+        if post_data and "comments" in post_data:
+            logger.info(f"Found {len(post_data['comments'])} comments for post: {post_id}")
+            return post_data["comments"]
+        logger.debug(f"No comments found for post: {post_id}")
+        return []
+    except Exception as e:
+        logger.error(f"Error retrieving comments for post {post_id}: {str(e)}")
+        raise
+
+def update_comment(post_id: str, comment_id: str, updates: Dict[str, Any]):
+    logger.info(f"Updating comment ID: {comment_id} for post ID: {post_id}")
+    try:
+        result = posts_collection.update_one(
+            {"_id": ObjectId(post_id), "comments._id": ObjectId(comment_id)},
+            {"$set": {"comments.$": updates}}
+        )
+        if result.modified_count > 0:
+            logger.info(f"Successfully updated comment: {comment_id} for post: {post_id}")
+        else:
+            logger.warning(f"No changes made to comment: {comment_id} for post: {post_id}")
+        return result
+    except Exception as e:
+        logger.error(f"Error updating comment {comment_id} for post {post_id}: {str(e)}")
+        raise
+
+def delete_comment(post_id: str, comment_id: str):
+    logger.warning(f"Deleting comment ID: {comment_id} for post ID: {post_id}")
+    try:
+        result = posts_collection.update_one(
+            {"_id": ObjectId(post_id)},
+            {"$pull": {"comments": {"_id": ObjectId(comment_id)}}}
+        )
+        if result.modified_count > 0:
+            logger.info(f"Successfully deleted comment: {comment_id} for post: {post_id}")
+        else:
+            logger.warning(f"Comment not found for deletion: {comment_id} for post: {post_id}")
+        return result
+    except Exception as e:
+        logger.error(f"Error deleting comment {comment_id} for post {post_id}: {str(e)}")
+        raise
+
+def get_comments_by_user_id(user_id: str, limit: int = 100, skip: int = 0):
+    logger.info(f"Retrieving comments by user ID: {user_id}")
+    comments = []
+    try:
+        for post_data in posts_collection.find({"comments.user_id": user_id}).skip(skip).limit(limit).sort("created_at", -1):
+            for comment in post_data.get("comments", []):
+                if comment.get("user_id") == user_id:
+                    comments.append(comment)
+        logger.info(f"Retrieved {len(comments)} comments for user: {user_id}")
+        return comments
+    except Exception as e:
+        logger.error(f"Error retrieving comments by user: {str(e)}")
+        raise

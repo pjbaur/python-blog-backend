@@ -191,3 +191,104 @@ async def upload_post_image(
         filename=unique_filename,
         url=image_url
     )
+
+# Comment endpoints
+@router.get("/{post_id}/comments", response_model=List[schemas.CommentResponse])
+async def get_post_comments(
+    post_id: str,
+    skip: int = Query(0, description="Number of comments to skip", alias="page"),
+    limit: int = Query(10, description="Maximum number of comments to return")
+):
+    logger.info(f"Retrieving comments for post ID: {post_id}")
+    
+    # Check if post exists
+    post = crud.get_post_by_id(post_id)
+    if not post:
+        logger.warning(f"Post not found with ID: {post_id}")
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Get comments for post
+    comments = crud.get_comments_for_post(post_id)
+    
+    # Apply pagination
+    paginated_comments = comments[skip:skip+limit] if comments else []
+    
+    # Convert to CommentResponse objects
+    response_comments = []
+    for comment in paginated_comments:
+        response_comments.append(schemas.CommentResponse(
+            id=str(comment["_id"]),
+            post_id=post_id,
+            author_id=comment["author_id"],
+            content=comment["content"],
+            parent_id=comment.get("parent_id"),
+            created_at=comment["created_at"],
+            updated_at=comment.get("updated_at"),
+            is_published=comment.get("is_published", True)
+        ))
+    
+    logger.info(f"Returning {len(response_comments)} comments for post: {post_id}")
+    return response_comments
+
+@router.post("/{post_id}/comments", response_model=schemas.CommentResponse, status_code=status.HTTP_201_CREATED)
+async def create_post_comment(
+    post_id: str,
+    comment_data: schemas.CommentCreate,
+    current_user: UserModel = Depends(auth.get_current_user)
+):
+    logger.debug(f">>>>>Creating comment for post ID: {post_id} by user: {current_user.email}")
+    
+    # Check if post exists
+    post = crud.get_post_by_id(post_id)
+    if not post:
+        logger.warning(f"Post not found with ID: {post_id}")
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Check if parent comment exists (if specified)
+    if comment_data.parent_id:
+        # Find parent comment
+        comments = crud.get_comments_for_post(post_id)
+        parent_comment = next((c for c in comments if str(c["_id"]) == comment_data.parent_id), None)
+        
+        if not parent_comment:
+            logger.warning(f"Parent comment not found with ID: {comment_data.parent_id}")
+            raise HTTPException(status_code=404, detail="Parent comment not found")
+    
+    # Create comment object
+    comment = {
+        "author_id": str(current_user.id),
+        "content": comment_data.content,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+        "is_published": True
+    }
+    
+    # Add parent_id if specified
+    if comment_data.parent_id:
+        comment["parent_id"] = comment_data.parent_id
+    
+    logger.debug(f">>>>>Comment data before saving to database: {comment}")
+
+    # Save comment to database
+    created_comment = crud.create_comment(post_id, comment)
+    
+    logger.debug(f">>>>>Created comment: {created_comment}")
+
+    if not created_comment or created_comment.modified_count == 0:
+        logger.error(f"Failed to create comment for post: {post_id}")
+        raise HTTPException(status_code=500, detail="Failed to create comment")
+    
+    logger.debug(f">>>>>Comment created for post: {post_id}")
+    
+    # Return the created comment
+    # I think this isn't returning the contract: response_model=schemas.CommentResponse
+    # class CommentResponse(BaseModel):
+    #     id: str
+    #     post_id: str
+    #     author_id: str
+    #     content: str
+    #     parent_id: Optional[str] = None
+    #     created_at: datetime
+    #     updated_at: Optional[datetime] = None
+    #     is_published: bool = True
+    return created_comment
