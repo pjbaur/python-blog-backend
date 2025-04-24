@@ -545,3 +545,357 @@ def test_unauthorized_comment_creation_api(create_test_post_with_comment):
     )
     
     assert response.status_code == 401
+
+# ********** Direct Comment API Endpoint Tests **********
+
+def test_get_comment_by_id_api(create_test_post_with_comment):
+    """Test the GET /comments/{comment_id} endpoint"""
+    comment_id = create_test_post_with_comment["comment_id"]
+    token = create_test_post_with_comment["token"]
+    
+    response = client.get(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["id"] == comment_id
+    assert data["content"] == "This is a test comment"
+    assert "author_id" in data
+    assert "created_at" in data
+
+def test_get_nonexistent_comment_api():
+    """Test retrieving a non-existent comment"""
+    # Generate a random ObjectId that doesn't exist
+    non_existent_id = str(ObjectId())
+    
+    response = client.get(
+        f"/api/v1/comments/{non_existent_id}"
+    )
+    
+    assert response.status_code == 404
+    assert "Comment not found" in response.json()["detail"]
+
+def test_update_comment_api(create_test_post_with_comment):
+    """Test the PUT /comments/{comment_id} endpoint"""
+    comment_id = create_test_post_with_comment["comment_id"]
+    token = create_test_post_with_comment["token"]
+    author_id = create_test_post_with_comment["author_id"]
+    
+    updated_comment_data = {
+        "content": "This comment has been updated"
+    }
+    
+    response = client.put(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        json=updated_comment_data
+    )
+    
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["id"] == comment_id
+    assert data["content"] == updated_comment_data["content"]
+    assert data["author_id"] == author_id
+    assert "updated_at" in data
+
+def test_update_comment_with_publishing_status_api(create_test_post_with_comment):
+    """Test updating a comment with publishing status"""
+    comment_id = create_test_post_with_comment["comment_id"]
+    token = create_test_post_with_comment["token"]
+    
+    updated_comment_data = {
+        "content": "This comment has been updated and unpublished",
+        "is_published": False
+    }
+    
+    response = client.put(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        json=updated_comment_data
+    )
+    
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["id"] == comment_id
+    assert data["content"] == updated_comment_data["content"]
+    assert data["is_published"] == False
+    
+    # Reset the published status for other tests
+    client.put(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"is_published": True}
+    )
+
+def test_update_nonexistent_comment_api(mock_user):
+    """Test updating a non-existent comment"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    # Generate a random ObjectId that doesn't exist
+    non_existent_id = str(ObjectId())
+    
+    updated_comment_data = {
+        "content": "This update should fail"
+    }
+    
+    response = client.put(
+        f"/api/v1/comments/{non_existent_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        json=updated_comment_data
+    )
+    
+    assert response.status_code == 404
+    assert "Comment not found" in response.json()["detail"]
+
+def test_update_comment_unauthorized_api(create_test_post_with_comment, mock_user_with_tokens):
+    """Test that users cannot update comments they don't own"""
+    comment_id = create_test_post_with_comment["comment_id"]
+    
+    # Get a different user's token
+    different_user_id = mock_user_with_tokens["user_id"]
+    different_user_token = mock_user_with_tokens["access_token"]
+    
+    # Make sure it's a different user
+    assert different_user_id != create_test_post_with_comment["author_id"]
+    
+    updated_comment_data = {
+        "content": "This update should be unauthorized"
+    }
+    
+    response = client.put(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {different_user_token}"},
+        json=updated_comment_data
+    )
+    
+    assert response.status_code == 403
+    assert "You can only update your own comments" in response.json()["detail"]
+
+def test_admin_update_any_comment_api(create_test_post_with_comment):
+    """Test that admin users can update any comment"""
+    comment_id = create_test_post_with_comment["comment_id"]
+    
+    # Create an admin user
+    admin_id = str(ObjectId())
+    admin_user = {
+        "_id": ObjectId(admin_id),
+        "email": "admin@example.com",
+        "hashed_password": "fakehashed",
+        "is_admin": True,
+        "tokens": []
+    }
+    db['users'].insert_one(admin_user)
+    
+    # Create token for admin
+    admin_token = create_test_token(data={"id": admin_id})
+    db['users'].update_one(
+        {"_id": ObjectId(admin_id)},
+        {"$push": {"tokens": admin_token}}
+    )
+    
+    updated_comment_data = {
+        "content": "This comment was updated by an admin"
+    }
+    
+    response = client.put(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json=updated_comment_data
+    )
+    
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["content"] == updated_comment_data["content"]
+    
+    # Clean up admin user
+    db['users'].delete_one({"_id": ObjectId(admin_id)})
+
+def test_delete_comment_api(create_test_post_with_comment):
+    """Test the DELETE /comments/{comment_id} endpoint"""
+    post_id = create_test_post_with_comment["post_id"]
+    token = create_test_post_with_comment["token"]
+    
+    # Create a new comment to delete (so we don't affect other tests)
+    test_comment = {
+        "content": "This comment will be deleted"
+    }
+    
+    create_response = client.post(
+        f"/api/v1/posts/{post_id}/comments",
+        headers={"Authorization": f"Bearer {token}"},
+        json=test_comment
+    )
+    
+    assert create_response.status_code == 201
+    comment_id = create_response.json()["id"]
+    
+    # Now delete the comment
+    delete_response = client.delete(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert delete_response.status_code == 204
+    
+    # Verify the comment was deleted
+    get_response = client.get(
+        f"/api/v1/comments/{comment_id}"
+    )
+    
+    assert get_response.status_code == 404
+
+def test_delete_nonexistent_comment_api(mock_user):
+    """Test deleting a non-existent comment"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    # Generate a random ObjectId that doesn't exist
+    non_existent_id = str(ObjectId())
+    
+    response = client.delete(
+        f"/api/v1/comments/{non_existent_id}",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code == 404
+    assert "Comment not found" in response.json()["detail"]
+
+def test_delete_comment_unauthorized_api(create_test_post_with_comment, mock_user_with_tokens):
+    """Test that users cannot delete comments they don't own"""
+    comment_id = create_test_post_with_comment["comment_id"]
+    
+    # Get a different user's token
+    different_user_id = mock_user_with_tokens["user_id"]
+    different_user_token = mock_user_with_tokens["access_token"]
+    
+    # Make sure it's a different user
+    assert different_user_id != create_test_post_with_comment["author_id"]
+    
+    response = client.delete(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {different_user_token}"}
+    )
+    
+    assert response.status_code == 403
+    assert "You can only delete your own comments" in response.json()["detail"]
+
+def test_admin_delete_any_comment_api(create_test_post_with_comment):
+    """Test that admin users can delete any comment"""
+    post_id = create_test_post_with_comment["post_id"]
+    token = create_test_post_with_comment["token"]
+    
+    # Create a comment for the admin to delete
+    test_comment = {
+        "content": "This comment will be deleted by an admin"
+    }
+    
+    create_response = client.post(
+        f"/api/v1/posts/{post_id}/comments",
+        headers={"Authorization": f"Bearer {token}"},
+        json=test_comment
+    )
+    
+    assert create_response.status_code == 201
+    comment_id = create_response.json()["id"]
+    
+    # Create an admin user
+    admin_id = str(ObjectId())
+    admin_user = {
+        "_id": ObjectId(admin_id),
+        "email": "admin2@example.com",
+        "hashed_password": "fakehashed",
+        "is_admin": True,
+        "tokens": []
+    }
+    db['users'].insert_one(admin_user)
+    
+    # Create token for admin
+    admin_token = create_test_token(data={"id": admin_id})
+    db['users'].update_one(
+        {"_id": ObjectId(admin_id)},
+        {"$push": {"tokens": admin_token}}
+    )
+    
+    # Admin deletes the comment
+    delete_response = client.delete(
+        f"/api/v1/comments/{comment_id}",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    
+    assert delete_response.status_code == 204
+    
+    # Clean up admin user
+    db['users'].delete_one({"_id": ObjectId(admin_id)})
+
+def test_create_comment_reply_api(create_test_post_with_comment):
+    """Test the POST /comments/{comment_id}/replies endpoint"""
+    comment_id = create_test_post_with_comment["comment_id"]
+    token = create_test_post_with_comment["token"]
+    
+    reply_data = {
+        "content": "This is a reply to another comment"
+    }
+    
+    response = client.post(
+        f"/api/v1/comments/{comment_id}/replies",
+        headers={"Authorization": f"Bearer {token}"},
+        json=reply_data
+    )
+    
+    assert response.status_code == 201
+    
+    data = response.json()
+    assert data["content"] == reply_data["content"]
+    assert data["parent_id"] == comment_id
+    assert "id" in data
+    assert "author_id" in data
+    assert "created_at" in data
+    
+    # Clean up
+    db['comments'].delete_one({"_id": ObjectId(data["id"])})
+
+def test_create_reply_nonexistent_comment_api(mock_user):
+    """Test creating a reply to a non-existent comment"""
+    # Create a token for authentication
+    token = create_test_token(data={"id": mock_user})
+    
+    # Add the token to the user's token list
+    db['users'].update_one(
+        {"_id": ObjectId(mock_user)},
+        {"$push": {"tokens": token}}
+    )
+    
+    # Generate a random ObjectId that doesn't exist
+    non_existent_id = str(ObjectId())
+    
+    reply_data = {
+        "content": "This reply should not be created"
+    }
+    
+    response = client.post(
+        f"/api/v1/comments/{non_existent_id}/replies",
+        headers={"Authorization": f"Bearer {token}"},
+        json=reply_data
+    )
+    
+    assert response.status_code == 404
+    assert "Parent comment not found" in response.json()["detail"]
