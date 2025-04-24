@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
 from .. import auth, crud, schemas
-from ..models import UserModel, PostModel
+from ..models import UserModel, PostModel, CommentModel
 from datetime import datetime, timezone
 from ..logger import get_logger
 from typing import List, Optional
@@ -208,28 +208,11 @@ async def get_post_comments(
         logger.warning(f"Post not found with ID: {post_id}")
         raise HTTPException(status_code=404, detail="Post not found")
     
-    # Get comments for post
-    comments = crud.get_comments_for_post(post_id)
+    # Get comments for post from separate collection
+    comments = crud.get_comments_for_post_v2(post_id, limit=limit, skip=skip)
     
-    # Apply pagination
-    paginated_comments = comments[skip:skip+limit] if comments else []
-    
-    # Convert to CommentResponse objects
-    response_comments = []
-    for comment in paginated_comments:
-        response_comments.append(schemas.CommentResponse(
-            id=str(comment["_id"]),
-            post_id=post_id,
-            author_id=comment["author_id"],
-            content=comment["content"],
-            parent_id=comment.get("parent_id"),
-            created_at=comment["created_at"],
-            updated_at=comment.get("updated_at"),
-            is_published=comment.get("is_published", True)
-        ))
-    
-    logger.info(f"Returning {len(response_comments)} comments for post: {post_id}")
-    return response_comments
+    logger.info(f"Returning {len(comments)} comments for post: {post_id}")
+    return comments
 
 @router.post("/{post_id}/comments", response_model=schemas.CommentResponse, status_code=status.HTTP_201_CREATED)
 async def create_post_comment(
@@ -237,7 +220,7 @@ async def create_post_comment(
     comment_data: schemas.CommentCreateRequest,
     current_user: UserModel = Depends(auth.get_current_user)
 ):
-    logger.debug(f">>>>>Creating comment for post ID: {post_id} by user: {current_user.email}")
+    logger.info(f"Creating comment for post ID: {post_id} by user: {current_user.email}")
     
     # Check if post exists
     post = crud.get_post_by_id(post_id)
@@ -247,50 +230,30 @@ async def create_post_comment(
     
     # Check if parent comment exists (if specified)
     if comment_data.parent_id:
-        # Find parent comment
-        comments = crud.get_comments_for_post(post_id)
-        parent_comment = next((c for c in comments if str(c["_id"]) == comment_data.parent_id), None)
+        parent_comment = crud.get_comment_by_id(comment_data.parent_id)
         
         if not parent_comment:
             logger.warning(f"Parent comment not found with ID: {comment_data.parent_id}")
             raise HTTPException(status_code=404, detail="Parent comment not found")
+        
+        # Ensure parent comment belongs to this post
+        if parent_comment.post_id != post_id:
+            logger.warning(f"Parent comment {comment_data.parent_id} does not belong to post {post_id}")
+            raise HTTPException(status_code=400, detail="Parent comment does not belong to this post")
     
-    # Create comment object with a new ObjectId
-    comment_id = ObjectId()
-    comment = {
-        "_id": comment_id,
-        "author_id": str(current_user.id),
-        "content": comment_data.content,
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
-        "is_published": True
-    }
-    
-    # Add parent_id if specified
-    if comment_data.parent_id:
-        comment["parent_id"] = comment_data.parent_id
-    
-    logger.debug(f">>>>>Comment data before saving to database: {comment}")
-
-    # Save comment to database
-    result = crud.create_comment(post_id, comment)
-    
-    logger.debug(f">>>>>Created comment result: {result}")
-
-    if not result or result.modified_count == 0:
-        logger.error(f"Failed to create comment for post: {post_id}")
-        raise HTTPException(status_code=500, detail="Failed to create comment")
-    
-    logger.debug(f">>>>>Comment created for post: {post_id}")
-    
-    # Return the created comment as a CommentResponse object
-    return schemas.CommentResponse(
-        id=str(comment_id),
+    # Create a new comment model
+    comment = CommentModel(
         post_id=post_id,
-        author_id=comment["author_id"],
-        content=comment["content"],
-        parent_id=comment.get("parent_id"),
-        created_at=comment["created_at"],
-        updated_at=comment.get("updated_at"),
-        is_published=comment.get("is_published", True)
+        author_id=str(current_user.id),
+        content=comment_data.content,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        parent_id=comment_data.parent_id,
+        is_published=True
     )
+    
+    # Save comment to separate comments collection
+    created_comment = crud.create_comment_v2(comment)
+    
+    logger.info(f"Comment created for post: {post_id} with ID: {created_comment.id}")
+    return created_comment

@@ -51,6 +51,7 @@ class UserPublicResponse(BaseModel):
         orm_mode = True
 
 # Login Schema
+
 class LoginRequest(BaseModel):
     """Schema for user login.
     
@@ -140,7 +141,13 @@ class CommentCreateRequest(BaseModel):
     """Schema for creating a new comment.
     
     This schema is used to parse the request body for comment creation.
-    It contains the required content field and optional parent_id for nested comments."""
+    It contains the required content field and optional parent_id for nested comments.
+    
+    The assumption is made that the post_id is passed in the URL path and not in the request body.
+    
+    TODO: Add a field for comment type (e.g., text, image, video).
+    TODO: Add a field for comment status (e.g., approved, spam, deleted).
+    TODO: Add validation rules for comment content length and format."""
     content: str
     parent_id: Optional[str] = None
 

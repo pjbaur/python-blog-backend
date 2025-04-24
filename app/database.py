@@ -24,3 +24,9 @@ except Exception as e:
 
 db = client['blog_db']
 logger.info(f"Using database: blog_db")
+
+# Define collections
+users_collection = db['users']
+posts_collection = db['posts']
+comments_collection = db['comments']
+logger.info("Database collections initialized")

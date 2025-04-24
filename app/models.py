@@ -33,6 +33,7 @@ class UserModel(BaseModel):
     email: EmailStr
     hashed_password: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
     is_active: bool = True
     is_admin: bool = False
     tokens: List[str] = []
@@ -43,6 +44,7 @@ class PostModel(BaseModel):
     content: str
     author_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
 
 class CommentModel(BaseModel):
     id: Optional[ObjectIdStr] = Field(None, alias='_id')
@@ -51,3 +53,6 @@ class CommentModel(BaseModel):
     content: str
     parent_id: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+    is_published: bool = True
+    is_deleted: bool = False

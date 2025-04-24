@@ -1,14 +1,11 @@
-from .models import UserModel, PostModel
-from .database import db
+from .models import UserModel, PostModel, CommentModel
+from .database import db, users_collection, posts_collection, comments_collection
 from bson.objectid import ObjectId
 from .logger import get_logger
 from typing import Dict, Any, Optional
 from datetime import timedelta
 
 logger = get_logger(__name__)
-
-users_collection = db['users']
-posts_collection = db['posts']
 
 # User CRUD operations
 def create_user(user: UserModel):
@@ -318,4 +315,119 @@ def get_comments_by_user_id(user_id: str, limit: int = 100, skip: int = 0):
         return comments
     except Exception as e:
         logger.error(f"Error retrieving comments by user: {str(e)}")
+        raise
+
+# New Comment CRUD operations with separate collection
+def create_comment_v2(comment: CommentModel):
+    """Create a new comment in the separate comments collection."""
+    comment_dict = comment.dict(by_alias=True, exclude_unset=True)
+    if "_id" in comment_dict and comment_dict["_id"] is None:
+        del comment_dict["_id"]
+    
+    logger.info(f"Creating new comment for post ID: {comment.post_id}")
+    try:
+        insert_result = comments_collection.insert_one(comment_dict)
+        comment.id = str(insert_result.inserted_id)
+        logger.info(f"Comment created with ID: {comment.id}")
+        return comment
+    except Exception as e:
+        logger.error(f"Error creating comment: {str(e)}")
+        raise
+
+def get_comment_by_id(comment_id: str):
+    """Retrieve a single comment by its ID."""
+    logger.debug(f"Retrieving comment by ID: {comment_id}")
+    try:
+        comment_data = comments_collection.find_one({"_id": ObjectId(comment_id)})
+        if comment_data:
+            logger.debug(f"Found comment with ID: {comment_id}")
+            return CommentModel(**comment_data)
+        logger.debug(f"Comment not found with ID: {comment_id}")
+        return None
+    except Exception as e:
+        logger.error(f"Error retrieving comment by ID: {str(e)}")
+        raise
+
+def update_comment_v2(comment_id: str, updates: Dict[str, Any]):
+    """Update a comment with the specified fields."""
+    logger.info(f"Updating comment with ID: {comment_id}")
+    logger.debug(f"Update data: {updates}")
+    try:
+        result = comments_collection.update_one({"_id": ObjectId(comment_id)}, {"$set": updates})
+        if result.modified_count > 0:
+            logger.info(f"Successfully updated comment: {comment_id}")
+        else:
+            logger.warning(f"No changes made to comment: {comment_id}")
+        return result
+    except Exception as e:
+        logger.error(f"Error updating comment {comment_id}: {str(e)}")
+        raise
+
+def delete_comment_v2(comment_id: str):
+    """Delete a comment by its ID."""
+    logger.warning(f"Deleting comment with ID: {comment_id}")
+    try:
+        result = comments_collection.delete_one({"_id": ObjectId(comment_id)})
+        if result.deleted_count > 0:
+            logger.info(f"Successfully deleted comment: {comment_id}")
+        else:
+            logger.warning(f"Comment not found for deletion: {comment_id}")
+        return result
+    except Exception as e:
+        logger.error(f"Error deleting comment {comment_id}: {str(e)}")
+        raise
+
+def get_comments_for_post_v2(post_id: str, limit: int = 100, skip: int = 0):
+    """Retrieve comments for a specific post with pagination."""
+    logger.info(f"Retrieving comments for post ID: {post_id} with limit: {limit}, skip: {skip}")
+    comments = []
+    try:
+        for comment_data in comments_collection.find({"post_id": post_id}).skip(skip).limit(limit).sort("created_at", -1):
+            comments.append(CommentModel(**comment_data))
+        logger.info(f"Retrieved {len(comments)} comments for post: {post_id}")
+        return comments
+    except Exception as e:
+        logger.error(f"Error retrieving comments for post {post_id}: {str(e)}")
+        raise
+
+def get_comments_by_user_v2(user_id: str, limit: int = 100, skip: int = 0):
+    """Retrieve comments by a specific user with pagination."""
+    logger.info(f"Retrieving comments by user ID: {user_id} with limit: {limit}, skip: {skip}")
+    comments = []
+    try:
+        for comment_data in comments_collection.find({"author_id": user_id}).skip(skip).limit(limit).sort("created_at", -1):
+            comments.append(CommentModel(**comment_data))
+        logger.info(f"Retrieved {len(comments)} comments for user: {user_id}")
+        return comments
+    except Exception as e:
+        logger.error(f"Error retrieving comments by user {user_id}: {str(e)}")
+        raise
+
+def get_comment_replies(comment_id: str, limit: int = 100, skip: int = 0):
+    """Retrieve replies to a specific comment with pagination."""
+    logger.info(f"Retrieving replies for comment ID: {comment_id} with limit: {limit}, skip: {skip}")
+    comments = []
+    try:
+        for comment_data in comments_collection.find({"parent_id": comment_id}).skip(skip).limit(limit).sort("created_at", -1):
+            comments.append(CommentModel(**comment_data))
+        logger.info(f"Retrieved {len(comments)} replies for comment: {comment_id}")
+        return comments
+    except Exception as e:
+        logger.error(f"Error retrieving replies for comment {comment_id}: {str(e)}")
+        raise
+
+def setup_comment_indexes():
+    """Set up MongoDB indexes for the comments collection for optimal performance."""
+    logger.info("Setting up indexes for comments collection")
+    try:
+        # Create indexes for common query patterns
+        comments_collection.create_index("post_id")
+        comments_collection.create_index("author_id")
+        comments_collection.create_index("parent_id")
+        comments_collection.create_index("created_at")
+        # Compound index for sorting comments by creation time within a post
+        comments_collection.create_index([("post_id", 1), ("created_at", -1)])
+        logger.info("Successfully created indexes for comments collection")
+    except Exception as e:
+        logger.error(f"Error setting up indexes for comments collection: {str(e)}")
         raise

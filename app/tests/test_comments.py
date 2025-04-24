@@ -50,10 +50,6 @@ def create_test_post_with_comment(mock_user):
         "content": "This is a test comment"
     }
     
-    # !!!!! ERROR
-    # ERROR app/tests/test_comments.py::test_get_post_comments_api - fastapi.exceptions.ResponseValidationError: 5 validation errors:
-    # missing: id, post_id, content, author_id, content, created_at
-    # ResponseValidationError
     comment_response = client.post(
         f"/api/v1/posts/{post_id}/comments",
         headers={"Authorization": f"Bearer {token}"},
@@ -71,8 +67,9 @@ def create_test_post_with_comment(mock_user):
         "author_id": mock_user
     }
     
-    # Clean up - remove the test post (and its comments)
+    # Clean up - remove the test post and comment
     db['posts'].delete_one({"_id": ObjectId(post_id)})
+    db['comments'].delete_one({"_id": ObjectId(comment_data["id"])})
 
 @pytest.fixture
 def create_test_post_with_nested_comments(mock_user):
@@ -140,14 +137,16 @@ def create_test_post_with_nested_comments(mock_user):
         "author_id": mock_user
     }
     
-    # Clean up - remove the test post (and its comments)
+    # Clean up - remove the test post and comments
     db['posts'].delete_one({"_id": ObjectId(post_id)})
+    db['comments'].delete_many({"post_id": post_id})
 
 # ********** CRUD Tests **********
 
 def test_create_comment_crud():
-    """Test the CRUD create_comment function directly"""
+    """Test the CRUD create_comment_v2 function directly"""
     from app import crud
+    from app.models import CommentModel
     
     # Create a test post first
     post_id = str(ObjectId())
@@ -162,48 +161,60 @@ def test_create_comment_crud():
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "categories": [],
-        "is_published": True,
-        "comments": []
+        "is_published": True
     }
     
     db['posts'].insert_one(post_data)
     
-    # Create test comment data
-    comment_id = ObjectId()
-    test_comment = {
-        "_id": comment_id,
-        "author_id": author_id,
-        "content": "Test comment for CRUD testing",
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
-        "is_published": True
-    }
+    # Create test comment 
+    comment = CommentModel(
+        post_id=post_id,
+        author_id=author_id,
+        content="Test comment for CRUD testing",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        is_published=True
+    )
     
     # Use CRUD function to create comment
-    result = crud.create_comment(post_id, test_comment)
+    result = crud.create_comment_v2(comment)
     
-    # Verify comment was added to post
-    updated_post = db['posts'].find_one({"_id": ObjectId(post_id)})
-    assert updated_post is not None
-    assert "comments" in updated_post
-    assert len(updated_post["comments"]) == 1
-    assert updated_post["comments"][0]["content"] == test_comment["content"]
-    assert str(updated_post["comments"][0]["_id"]) == str(comment_id)
+    # Verify comment was added to the comments collection
+    saved_comment = db['comments'].find_one({"post_id": post_id})
+    assert saved_comment is not None
+    assert saved_comment["content"] == comment.content
+    assert saved_comment["author_id"] == author_id
     
     # Clean up
     db['posts'].delete_one({"_id": ObjectId(post_id)})
+    db['comments'].delete_one({"_id": saved_comment["_id"]})
 
 def test_get_comments_for_post_crud():
-    """Test the CRUD get_comments_for_post function directly"""
+    """Test the CRUD get_comments_for_post_v2 function directly"""
     from app import crud
+    from app.models import CommentModel
     
-    # Create a test post with comments
+    # Create a test post
     post_id = str(ObjectId())
     author_id = str(ObjectId())
     
-    # Create test comments
+    # Insert test post into database
+    post_data = {
+        "_id": ObjectId(post_id),
+        "title": "Test Post for Comment CRUD",
+        "content": "This is a post for testing comment CRUD",
+        "author_id": author_id,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+        "categories": [],
+        "is_published": True
+    }
+    
+    db['posts'].insert_one(post_data)
+    
+    # Create test comments directly in the comments collection
     comment1 = {
-        "_id": ObjectId(),
+        "post_id": post_id,
         "author_id": author_id,
         "content": "Test comment 1",
         "created_at": datetime.now(timezone.utc),
@@ -212,7 +223,7 @@ def test_get_comments_for_post_crud():
     }
     
     comment2 = {
-        "_id": ObjectId(),
+        "post_id": post_id,
         "author_id": author_id,
         "content": "Test comment 2",
         "created_at": datetime.now(timezone.utc),
@@ -220,7 +231,33 @@ def test_get_comments_for_post_crud():
         "is_published": True
     }
     
-    # Insert test post with comments into database
+    comment1_id = db['comments'].insert_one(comment1).inserted_id
+    comment2_id = db['comments'].insert_one(comment2).inserted_id
+    
+    # Use CRUD function to get comments
+    comments = crud.get_comments_for_post_v2(post_id)
+    
+    # Verify comments were retrieved
+    assert comments is not None
+    assert len(comments) == 2
+    comment_contents = [c.content for c in comments]
+    assert "Test comment 1" in comment_contents
+    assert "Test comment 2" in comment_contents
+    
+    # Clean up
+    db['posts'].delete_one({"_id": ObjectId(post_id)})
+    db['comments'].delete_many({"post_id": post_id})
+
+def test_update_comment_crud():
+    """Test the CRUD update_comment_v2 function directly"""
+    from app import crud
+    from app.models import CommentModel
+    
+    # Create a test post
+    post_id = str(ObjectId())
+    author_id = str(ObjectId())
+    
+    # Insert test post into database
     post_data = {
         "_id": ObjectId(post_id),
         "title": "Test Post for Comment CRUD",
@@ -229,36 +266,14 @@ def test_get_comments_for_post_crud():
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "categories": [],
-        "is_published": True,
-        "comments": [comment1, comment2]
+        "is_published": True
     }
     
     db['posts'].insert_one(post_data)
     
-    # Use CRUD function to get comments
-    comments = crud.get_comments_for_post(post_id)
-    
-    # Verify comments were retrieved
-    assert comments is not None
-    assert len(comments) == 2
-    assert comments[0]["content"] == comment1["content"]
-    assert comments[1]["content"] == comment2["content"]
-    
-    # Clean up
-    db['posts'].delete_one({"_id": ObjectId(post_id)})
-
-def test_update_comment_crud():
-    """Test the CRUD update_comment function directly"""
-    from app import crud
-    
-    # Create a test post with a comment
-    post_id = str(ObjectId())
-    author_id = str(ObjectId())
-    comment_id = ObjectId()
-    
     # Create test comment
-    comment = {
-        "_id": comment_id,
+    comment_data = {
+        "post_id": post_id,
         "author_id": author_id,
         "content": "Original comment content",
         "created_at": datetime.now(timezone.utc),
@@ -266,7 +281,32 @@ def test_update_comment_crud():
         "is_published": True
     }
     
-    # Insert test post with comment into database
+    comment_id = db['comments'].insert_one(comment_data).inserted_id
+    
+    # Updated comment data
+    updated_content = "Updated comment content"
+    
+    # Use CRUD function to update comment
+    result = crud.update_comment_v2(str(comment_id), {"content": updated_content})
+    
+    # Verify comment was updated
+    updated_comment = db['comments'].find_one({"_id": comment_id})
+    assert updated_comment is not None
+    assert updated_comment["content"] == updated_content
+    
+    # Clean up
+    db['posts'].delete_one({"_id": ObjectId(post_id)})
+    db['comments'].delete_one({"_id": comment_id})
+
+def test_delete_comment_crud():
+    """Test the CRUD delete_comment_v2 function directly"""
+    from app import crud
+    
+    # Create a test post
+    post_id = str(ObjectId())
+    author_id = str(ObjectId())
+    
+    # Insert test post into database
     post_data = {
         "_id": ObjectId(post_id),
         "title": "Test Post for Comment CRUD",
@@ -275,46 +315,14 @@ def test_update_comment_crud():
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "categories": [],
-        "is_published": True,
-        "comments": [comment]
+        "is_published": True
     }
     
     db['posts'].insert_one(post_data)
     
-    # Updated comment data
-    updated_comment = {
-        "_id": comment_id,
-        "author_id": author_id,
-        "content": "Updated comment content",
-        "created_at": comment["created_at"],
-        "updated_at": datetime.now(timezone.utc),
-        "is_published": True
-    }
-    
-    # Use CRUD function to update comment
-    result = crud.update_comment(post_id, str(comment_id), updated_comment)
-    
-    # Verify comment was updated
-    updated_post = db['posts'].find_one({"_id": ObjectId(post_id)})
-    assert updated_post is not None
-    assert len(updated_post["comments"]) == 1
-    assert updated_post["comments"][0]["content"] == "Updated comment content"
-    
-    # Clean up
-    db['posts'].delete_one({"_id": ObjectId(post_id)})
-
-def test_delete_comment_crud():
-    """Test the CRUD delete_comment function directly"""
-    from app import crud
-    
-    # Create a test post with a comment
-    post_id = str(ObjectId())
-    author_id = str(ObjectId())
-    comment_id = ObjectId()
-    
     # Create test comment
-    comment = {
-        "_id": comment_id,
+    comment_data = {
+        "post_id": post_id,
         "author_id": author_id,
         "content": "Comment to be deleted",
         "created_at": datetime.now(timezone.utc),
@@ -322,28 +330,14 @@ def test_delete_comment_crud():
         "is_published": True
     }
     
-    # Insert test post with comment into database
-    post_data = {
-        "_id": ObjectId(post_id),
-        "title": "Test Post for Comment CRUD",
-        "content": "This is a post for testing comment CRUD",
-        "author_id": author_id,
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
-        "categories": [],
-        "is_published": True,
-        "comments": [comment]
-    }
-    
-    db['posts'].insert_one(post_data)
+    comment_id = db['comments'].insert_one(comment_data).inserted_id
     
     # Use CRUD function to delete comment
-    result = crud.delete_comment(post_id, str(comment_id))
+    result = crud.delete_comment_v2(str(comment_id))
     
     # Verify comment was deleted
-    updated_post = db['posts'].find_one({"_id": ObjectId(post_id)})
-    assert updated_post is not None
-    assert len(updated_post["comments"]) == 0
+    deleted_comment = db['comments'].find_one({"_id": comment_id})
+    assert deleted_comment is None
     
     # Clean up
     db['posts'].delete_one({"_id": ObjectId(post_id)})
@@ -395,7 +389,7 @@ def test_create_post_comment_api(create_test_post_with_comment):
     assert "author_id" in data
     assert "created_at" in data
     
-    # Verify comment was added to post
+    # Verify comment was added to the comments collection
     response = client.get(
         f"/api/v1/posts/{post_id}/comments",
         headers={"Authorization": f"Bearer {token}"}
@@ -403,6 +397,9 @@ def test_create_post_comment_api(create_test_post_with_comment):
     assert response.status_code == 200
     comments = response.json()
     assert len(comments) == 2
+    
+    # Clean up the new comment
+    db['comments'].delete_one({"_id": ObjectId(data["id"])})
 
 def test_create_nested_comment_api(create_test_post_with_comment):
     """Test creating a nested comment via the API"""
@@ -431,6 +428,9 @@ def test_create_nested_comment_api(create_test_post_with_comment):
     assert "id" in data
     assert "author_id" in data
     assert "created_at" in data
+    
+    # Clean up the child comment
+    db['comments'].delete_one({"_id": ObjectId(data["id"])})
 
 def test_get_nested_comments_api(create_test_post_with_nested_comments):
     """Test retrieving nested comments via the API"""
