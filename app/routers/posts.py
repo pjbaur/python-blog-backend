@@ -17,7 +17,7 @@ router = APIRouter(
 
 @router.post("", response_model=schemas.PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
-    post_data: schemas.PostCreate,
+    post_data: schemas.PostCreateRequest,
     current_user: UserModel = Depends(auth.get_current_user)
 ):
     logger.info(f"Creating new post for user: {current_user.email}")
@@ -234,7 +234,7 @@ async def get_post_comments(
 @router.post("/{post_id}/comments", response_model=schemas.CommentResponse, status_code=status.HTTP_201_CREATED)
 async def create_post_comment(
     post_id: str,
-    comment_data: schemas.CommentCreate,
+    comment_data: schemas.CommentCreateRequest,
     current_user: UserModel = Depends(auth.get_current_user)
 ):
     logger.debug(f">>>>>Creating comment for post ID: {post_id} by user: {current_user.email}")

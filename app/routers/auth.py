@@ -13,7 +13,7 @@ router = APIRouter(
 
 # User Registration
 @router.post("/register", response_model=schemas.UserResponse)
-def register_user(user: schemas.UserCreate):
+def register_user(user: schemas.UserCreateRequest):
     logger.info(f"Registration attempt for email: {user.email}")
     existing_user = crud.get_user_by_email(user.email)
     if existing_user:

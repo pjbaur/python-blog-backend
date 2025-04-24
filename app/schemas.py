@@ -6,7 +6,7 @@ from datetime import datetime
 class UserBase(BaseModel):
     email: EmailStr
 
-class UserCreate(UserBase):
+class UserCreateRequest(UserBase):
     password: str
 
 class UserUpdate(BaseModel):
@@ -67,7 +67,7 @@ class LogoutRequest(BaseModel):
     access_token: Optional[str] = None
 
 # Post Schemas
-class PostCreate(BaseModel):
+class PostCreateRequest(BaseModel):
     title: str
     content: str
     categories: Optional[List[int]] = None
@@ -93,7 +93,7 @@ class PostUpdateRequest(BaseModel):
     is_published: Optional[bool] = None
 
 # Comment Schemas
-class CommentCreate(BaseModel):
+class CommentCreateRequest(BaseModel):
     content: str
     parent_id: Optional[str] = None
 
