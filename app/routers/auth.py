@@ -33,7 +33,7 @@ def register_user(user: schemas.UserCreateRequest):
     return new_user
 
 # User Login
-@router.post("/login", response_model=schemas.Token)
+@router.post("/login", response_model=schemas.TokenResponse)
 def login_user(login_data: schemas.LoginRequest):
     """ Login endpoint for user authentication.
 
@@ -59,7 +59,7 @@ def login_user(login_data: schemas.LoginRequest):
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 # Implement refresh token endpoint
-@router.post("/refresh", response_model=schemas.Token)
+@router.post("/refresh", response_model=schemas.TokenResponse)
 def refresh_token(refresh_data: schemas.RefreshTokenRequest):
     """ Refresh token endpoint.
 

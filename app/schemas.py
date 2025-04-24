@@ -47,12 +47,11 @@ class LoginRequest(BaseModel):
     password: str
 
 # Token Schemas
-class Token(BaseModel):
+class TokenResponse(BaseModel):
     """ Schema for the token response from the authentication endpoint.
     This schema is used to parse the response from the authentication endpoint
     and extract the access token, refresh token, and token type.
     
-    If access and refresh tokens are not interchangable, then this schema should not exist.
     TODO: Read-up on JWTs.
     """
     access_token: str

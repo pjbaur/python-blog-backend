@@ -194,4 +194,4 @@ def test_update_current_user(mock_user):
     # Verify token was removed from other users
     other_users = db['users'].find({"_id": {"$ne": ObjectId(mock_user)}})
     for user in other_users:
-        assert token not in user["tokens"]
+        assert "tokens" not in user or token not in user["tokens"]
