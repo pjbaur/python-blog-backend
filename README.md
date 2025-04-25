@@ -143,6 +143,12 @@ When the application is running, you can access:
 - Interactive API documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Alternative API documentation: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
+### TODO
+
+- Improve password validation testing
+- Improve CRUD testing
+- Improve auth testing
+
 ## Project Structure
 ```
 python-blog-backend/
