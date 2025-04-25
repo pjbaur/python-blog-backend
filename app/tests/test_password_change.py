@@ -144,3 +144,45 @@ class TestPasswordChange:
         
         # Check that the old token is now invalid
         assert me_response.status_code == 401
+
+    def test_password_reuse_prevention(self, mock_user_with_tokens):
+        """Test that password change fails when trying to reuse a previous password"""
+        access_token = mock_user_with_tokens["access_token"]
+        user_id = mock_user_with_tokens["user_id"]
+        initial_password = "testpassword"  # From the mock_user_with_tokens fixture
+        
+        # First password change - change to a new password
+        first_change_response = client.post(
+            "/api/v1/users/me/change-password",
+            json={
+                "current_password": initial_password,
+                "new_password": "newPassword-OrangeOverhead123",
+                "confirm_password": "newPassword-OrangeOverhead123"
+            },
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        
+        # Get the new access token for subsequent requests
+        new_access_token = first_change_response.json()["access_token"]
+        
+        # Try to change back to the original password - should be rejected
+        reuse_response = client.post(
+            "/api/v1/users/me/change-password",
+            json={
+                "current_password": "newPassword-OrangeOverhead123",
+                "new_password": initial_password,
+                "confirm_password": initial_password
+            },
+            headers={"Authorization": f"Bearer {new_access_token}"}
+        )
+        
+        # Check that the request failed with the correct error
+        assert reuse_response.status_code == 400
+        assert "Password cannot be reused" in reuse_response.json()["detail"]
+        
+        # Verify the password remains the new one
+        user_after = db['users'].find_one({"_id": ObjectId(user_id)})
+        assert verify_password("newPassword-OrangeOverhead123", user_after["hashed_password"])
+        
+        # Verify that the password history has been updated
+        assert len(user_after.get("password_history", [])) > 0

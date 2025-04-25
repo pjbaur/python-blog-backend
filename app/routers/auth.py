@@ -23,7 +23,7 @@ def register_user(user: schemas.UserCreateRequest):
 
     # Validate password using PasswordPolicy
     password_policy = PasswordPolicy()
-    is_valid, password_errors = password_policy.validate(user.password)
+    is_valid, password_errors = password_policy.validate_password(user.password)
     if not is_valid:
         logger.warning(f"Registration failed: Password validation errors for {user.email}: {password_errors}")
         raise HTTPException(
@@ -39,6 +39,7 @@ def register_user(user: schemas.UserCreateRequest):
         is_admin=False,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
+        password_history=[]  # Initialize empty password history
     )
     new_user = crud.create_user(user_model)
     logger.info(f"User registered successfully: {user.email}")

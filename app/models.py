@@ -37,6 +37,7 @@ class UserModel(BaseModel):
     is_active: bool = True
     is_admin: bool = False
     tokens: List[str] = []
+    password_history: List[str] = []
 
 class PostModel(BaseModel):
     id: Optional[ObjectIdStr] = Field(None, alias='_id')

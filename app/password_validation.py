@@ -1,12 +1,17 @@
 from datetime import datetime, timedelta
 import zxcvbn
 import re
-from app.auth import get_password_hash
+from app.auth import get_password_hash, verify_password
 from .database import db
 from .logger import get_logger
 
 class PasswordPolicy:
-    """Class to manage password policies and validation."""
+    """Class to manage password policies and validation.
+    
+    This class handles the configuration of password policies, validation of passwords
+    against these policies, and provides feedback on password strength.
+    It uses the zxcvbn library to evaluate password strength and provides methods
+    to check password reuse and expiration based on policy settings."""
     
     # Define strength levels for password validation
     # These levels can be used to categorize the strength of a password
@@ -82,7 +87,14 @@ class PasswordPolicy:
             return False
         
     def validate_password(self, password, user_inputs=None):
-        """Validate a password against the current policy."""
+        """Validate a password against the current policy.
+        
+        Args:
+            password: The plaintext password to validate
+            user_inputs: Optional list of previous passwords or user inputs for zxcvbn
+        Returns:
+            Tuple[bool, List[str]]: (is_valid, errors)
+        """
         errors = []
         
         # Check length
@@ -113,7 +125,14 @@ class PasswordPolicy:
         return (len(errors) == 0, errors)
     
     def calculate_strength(self, password, user_inputs=None):
-        """Calculate the strength of a password using zxcvbn."""
+        """Calculate the strength of a password using zxcvbn.
+        
+        Args:
+            password: The plaintext password to evaluate
+            user_inputs: Optional list of previous passwords or user inputs for zxcvbn
+        Returns:
+            Dict[str, Union[int, str]]: A dictionary containing the score, strength level, and feedback
+        """
         user_inputs = user_inputs or []
         result = zxcvbn.zxcvbn(password, user_inputs)
         
@@ -127,12 +146,33 @@ class PasswordPolicy:
     def check_password_reuse(self, new_password, password_history):
         """Check if a password exists in the user's password history.
         
-        TODO: Implement password history"""
-        new_hash = get_password_hash(new_password)
-        return new_hash in password_history
+        Args:
+            new_password: The plaintext password to check
+            password_history: List of hashed passwords from user's history
+            
+        Returns:
+            Tuple[bool, str]: (is_reused, error_message)
+        """
+        if not password_history or not self.config["password_history_count"]:
+            return False, ""
+            
+        # Check if the password matches any in the history
+        for old_password_hash in password_history:
+            if verify_password(new_password, old_password_hash):
+                history_count = self.config["password_history_count"]
+                return True, f"Password cannot be reused (must be different from last {history_count} passwords)"
+                
+        return False, ""
     
     def needs_password_update(self, user_policy_version, password_date):
-        """Check if a password needs to be updated based on policy changes or age."""
+        """Check if a password needs to be updated based on policy changes or age.
+        
+        Args:
+            user_policy_version: The version of the password policy used when the password was set
+            password_date: The date the password was last updated
+        Returns:
+            Tuple[bool, str]: (needs_update, message)
+        """
         # Check if policy has changed
         if user_policy_version != self.config["policy_version"]:
             return True, "Password policy has been updated"

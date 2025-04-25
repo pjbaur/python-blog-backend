@@ -94,6 +94,21 @@ async def change_password(
         )
     
     password_policy = PasswordPolicy()
+    
+    # Check if password is being reused
+    is_reused, reuse_error = password_policy.check_password_reuse(
+        password_data.new_password, 
+        current_user.password_history
+    )
+    
+    if is_reused:
+        logger.warning(f"Password change failed: Password reuse detected for user: {current_user.email}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=reuse_error
+        )
+    
+    # Validate password strength
     is_valid, password_errors = password_policy.validate_password(password_data.new_password)
     if not is_valid:
         logger.warning(f"Password change failed: New password validation errors for {current_user.email}: {password_errors}")
@@ -106,9 +121,24 @@ async def change_password(
     # Hash new password
     hashed_password = auth.get_password_hash(password_data.new_password)
     
-    # Update user with new password
+    # Get the maximum history size from the policy
+    max_history_size = password_policy.config["password_history_count"]
+    
+    # Prepare password history update
+    password_history = current_user.password_history.copy() if current_user.password_history else []
+    
+    # Add current password to history
+    if current_user.hashed_password not in password_history:
+        password_history.append(current_user.hashed_password)
+    
+    # Trim history if it exceeds the maximum size
+    if len(password_history) > max_history_size:
+        password_history = password_history[-max_history_size:]
+    
+    # Update user with new password and history
     updates = {
         "hashed_password": hashed_password,
+        "password_history": password_history,
         "updated_at": datetime.now(timezone.utc)
     }
     
