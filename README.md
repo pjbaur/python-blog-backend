@@ -6,9 +6,14 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 
 - **User Authentication**: JWT-based authentication with secure password hashing
 - **User Management**: Registration, login, and user profile endpoints
+- **Password Security**: 
+  - Password strength validation using zxcvbn
+  - Password change functionality
+  - Password history tracking to prevent reuse
 - **Blog Post Management**: Create, read, update, and delete blog posts
-- **Comment System**: Support for nested comments on blog posts
+- **Comment System**: Support for nested comments on blog posts with separate collection
 - **Admin Panel**: Protected endpoints for administrative functions
+- **Image Upload**: Support for uploading images for blog posts
 - **Dockerized**: Easy deployment with Docker
 
 ## Tech Stack
@@ -16,6 +21,7 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/)
 - **Database**: [MongoDB](https://www.mongodb.com/)
 - **Authentication**: JWT tokens via [python-jose](https://github.com/mpdavis/python-jose) and [passlib](https://passlib.readthedocs.io/)
+- **Password Strength**: [zxcvbn](https://github.com/dropbox/zxcvbn) for reliable password strength estimation
 - **Testing**: [pytest](https://docs.pytest.org/)
 - **Containerization**: Docker
 
@@ -70,6 +76,7 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 - POST /api/v1/auth/login — Login user (returns access and refresh tokens)
 - POST /api/v1/auth/refresh — Refresh access token using refresh token
 - POST /api/v1/auth/logout — Logout user (invalidates tokens)
+- POST /api/v1/auth/change-password — Change user password (requires current password)
 
 ### Users
 - GET /api/v1/users/me — Get current user information
@@ -92,6 +99,9 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 ### Comments
 - GET /api/v1/posts/{post_id}/comments — Get comments for a post
 - POST /api/v1/posts/{post_id}/comments — Create a comment on a post
+- PUT /api/v1/comments/{comment_id} — Update a comment (requires ownership)
+- DELETE /api/v1/comments/{comment_id} — Delete a comment (requires ownership)
+- POST /api/v1/comments/{comment_id}/replies — Create a reply to a comment
 
 ## Development
 
@@ -144,13 +154,34 @@ python-blog-backend/
 │   ├── database.py      # Database connection
 │   ├── logger.py        # Logging configuration
 │   ├── models.py        # Data models
-│   ├── routes.py        # API endpoints
+│   ├── password_validation.py # Password strength and history validation
+│   ├── routes.py        # Main API routes
 │   ├── schemas.py       # Pydantic schemas
+│   ├── routers/         # Modular API routers
+│   │   ├── __init__.py
+│   │   ├── admin.py     # Admin endpoints
+│   │   ├── auth.py      # Auth endpoints
+│   │   ├── comments.py  # Comment endpoints 
+│   │   ├── posts.py     # Post endpoints
+│   │   └── users.py     # User endpoints
 │   └── tests/           # Test directory
 │       ├── __init__.py
-│       └── test_api.py  # API tests
+│       ├── test_admin_api.py
+│       ├── test_auth_tokens.py
+│       ├── test_comments.py
+│       ├── test_crud.py
+│       ├── test_password_change.py
+│       ├── test_posts.py
+│       ├── test_users.py
+│       └── test_utils.py
+├── changes/             # Change documentation
+├── documentation/       # Project documentation
+├── logs/                # Application logs
+├── uploads/             # Uploaded files (images)
 ├── Dockerfile           # Docker configuration
 ├── requirements.txt     # Python dependencies
+├── env.template         # Environment variables template
+├── CODE_OF_CONDUCT.md   # Code of conduct
 └── README.md
 ```
 
