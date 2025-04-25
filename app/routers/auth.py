@@ -3,6 +3,7 @@ from .. import auth, crud, schemas
 from ..models import UserModel
 from datetime import timedelta, datetime, timezone
 from ..logger import get_logger
+from ..password_validation import PasswordPolicy
 
 logger = get_logger(__name__)
 
@@ -19,6 +20,17 @@ def register_user(user: schemas.UserCreateRequest):
     if existing_user:
         logger.warning(f"Registration failed: Email already registered: {user.email}")
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Validate password using PasswordPolicy
+    password_policy = PasswordPolicy()
+    is_valid, password_errors = password_policy.validate(user.password)
+    if not is_valid:
+        logger.warning(f"Registration failed: Password validation errors for {user.email}: {password_errors}")
+        raise HTTPException(
+            status_code=422, 
+            detail="Password validation failed",
+            errors=password_errors)
+
     hashed_password = auth.get_password_hash(user.password)
     user_model = UserModel(
         email=user.email,

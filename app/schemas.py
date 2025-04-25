@@ -60,6 +60,16 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+# Password Change Schema
+class PasswordChangeRequest(BaseModel):
+    """Schema for password change.
+    
+    This schema is used to parse the request body for changing a user's password.
+    It contains the required fields for verifying the current password and setting a new one."""
+    current_password: str
+    new_password: str
+    confirm_password: str
+
 # Token Schemas
 
 class TokenInfo(BaseModel):
