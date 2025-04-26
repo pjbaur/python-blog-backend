@@ -13,7 +13,6 @@ load_dotenv()
 
 # Set up logging
 logger = get_logger(__name__)
-setup_logging()
 
 # Create initial admin user on startup if it doesn't exist
 async def create_initial_admin():
