@@ -191,6 +191,170 @@ python-blog-backend/
 └── README.md
 ```
 
+## Trade-offs
+
+### Business Logic in Routes vs. Service Layer
+
+This application places business logic directly within route handlers rather than using a dedicated service layer. This architectural decision has several implications:
+
+#### Advantages
+- **Simplicity**: For smaller applications, keeping logic in routes is straightforward
+- **Development Speed**: Faster initial development due to less abstraction
+- **Reduced Boilerplate**: Fewer files and less code organization needed
+- **Easier to Understand**: New developers can see the full request-to-response flow in one place
+
+#### Disadvantages
+- **Reduced Testability**: Business logic mixed with HTTP concerns is harder to unit test
+- **Code Duplication**: Similar business logic may be repeated across multiple route handlers
+- **Maintainability Issues**: As the application grows, route files become bloated
+- **Harder Refactoring**: Changing business rules requires touching HTTP-specific code
+
+For a portfolio project like this one, this approach is acceptable, but for larger production applications, refactoring toward a service-oriented architecture would be beneficial for maintainability and testability.
+
+### MongoDB vs SQL Database
+
+This application uses MongoDB (NoSQL) instead of a relational database like PostgreSQL.
+
+#### Advantages
+- **Schema Flexibility**: Easy to evolve data models without migrations
+- **JSON-Native Storage**: Natural fit for JSON-based APIs
+- **Horizontal Scalability**: Easier sharding and distribution for high-volume data
+- **Performance**: Fast reads and writes for document-centric operations
+
+#### Disadvantages
+- **Lack of ACID Transactions**: Limited transaction support compared to SQL databases
+- **Denormalization**: May require duplicating data across documents
+- **Query Complexity**: Complex joins and relationships are more difficult
+- **Storage Efficiency**: Can be less space-efficient than normalized SQL data
+
+The choice of MongoDB works well for a blog platform where document structure (posts, comments) naturally fits the document model, but a relational database might be better for highly relational data with complex joins.
+
+### JWT Authentication Strategy
+
+The application uses JWT tokens with refresh token functionality for authentication.
+
+#### Advantages
+- **Stateless Authentication**: No need to store session data server-side
+- **Scalability**: Works well across distributed systems
+- **Cross-Domain**: Easily used across different domains and services
+- **Mobile Friendly**: Well-suited for mobile and API authentication
+
+#### Disadvantages
+- **Token Size**: JWTs can be larger than session IDs
+- **Revocation Challenges**: Tokens remain valid until expiration unless additional invalidation measures are implemented
+- **Secret Management**: Requires secure handling of signing keys
+- **Token Storage**: Client-side storage requires careful security considerations
+
+This authentication approach aligns well with the stateless nature of REST APIs, but session-based authentication might be simpler for smaller, monolithic applications.
+
+### Monolithic Application vs Microservices
+
+The application follows a monolithic architecture with modular components rather than microservices.
+
+#### Advantages
+- **Simplicity**: Easier development, deployment, and debugging
+- **Performance**: No inter-service communication overhead
+- **Consistency**: Shared code and models across the application
+- **Development Speed**: Faster initial development and iteration
+
+#### Disadvantages
+- **Scalability Limitations**: All components must scale together
+- **Technology Constraints**: Single technology stack for the entire application
+- **Deployment Risk**: Changes to any part require redeploying the entire application
+- **Team Coordination**: Can be challenging for larger teams working on different features
+
+For this portfolio application, a monolithic approach provides simplicity and rapid development. Microservices would add unnecessary complexity unless there were specific scalability or team organization requirements.
+
+### FastAPI Framework Choice
+
+Using FastAPI instead of alternatives like Flask, Django, or Express.js.
+
+#### Advantages
+- **Performance**: High-speed API serving with Starlette and Uvicorn
+- **Type Safety**: Built-in Pydantic data validation
+- **OpenAPI Integration**: Automatic API documentation generation
+- **Modern Python Features**: Async/await support and type hints
+
+#### Disadvantages
+- **Ecosystem Maturity**: Newer framework with smaller ecosystem than Django or Flask
+- **Learning Curve**: Type annotations and async concepts may be unfamiliar
+- **Limited Built-ins**: Fewer built-in features compared to full-stack frameworks like Django
+- **Community Size**: Smaller community compared to more established frameworks
+
+FastAPI's focus on API development with modern Python features makes it well-suited for this project, though Django might offer more built-in features and Rails-like development speed for full applications.
+
+### Directory Structure and Code Organization
+
+The application uses a router-based organization pattern.
+
+#### Advantages
+- **API-Focused Structure**: Clear organization around API endpoints
+- **Separation by Domain**: Easy to find code related to specific features
+- **Framework Alignment**: Follows FastAPI's recommended structure
+- **Request-Centric**: Navigation correlates to API endpoints
+
+#### Disadvantages
+- **Business Logic Scattering**: Business logic can spread across multiple modules
+- **Cross-Cutting Concerns**: Features that span multiple domains can be awkward
+- **Route Coupling**: Routes may contain mixed concerns (validation, auth, business logic)
+- **Growth Challenges**: May become unwieldy as application grows
+
+This structure works well for an API-focused application but alternatives like domain-driven design might better separate business concerns as the application grows.
+
+### Local File Storage for Images
+
+Images are stored in the local filesystem rather than cloud storage solutions.
+
+#### Advantages
+- **Simplicity**: No external dependencies or configurations
+- **Development Friendly**: Easy to set up and test locally
+- **Cost**: No additional cloud storage costs
+- **Control**: Complete control over the storage system
+
+#### Disadvantages
+- **Scalability Concerns**: Limited by local disk space
+- **Reliability**: No built-in redundancy or backup
+- **Distribution Challenges**: Harder to serve from CDNs or distribute geographically
+- **Deployment Complexity**: Requires persistent volumes in containerized deployments
+
+Local storage works for development and small deployments, but production applications would benefit from using S3 or similar cloud storage solutions for scalability and reliability.
+
+### Error Handling Strategy
+
+The application handles errors through HTTPExceptions and FastAPI's exception handling.
+
+#### Advantages
+- **Framework Integration**: Leverages FastAPI's built-in exception handling
+- **HTTP Semantics**: Errors map cleanly to HTTP status codes
+- **Simplicity**: Straightforward error raising and catching
+- **Validation Integration**: Works well with Pydantic validation errors
+
+#### Disadvantages
+- **Limited Granularity**: HTTP status codes provide limited error type information
+- **Error Consistency**: Error formats may vary across different parts of the application
+- **Client Adaptability**: Clients need to handle various error formats
+- **Debugging Information**: May include too much or too little information for debugging
+
+This approach provides a good balance for a RESTful API, though more structured error objects with error codes might be beneficial for larger applications.
+
+### Configuration Management
+
+The application uses environment variables for configuration.
+
+#### Advantages
+- **Deployment Flexibility**: Easy to configure in different environments
+- **Security**: Sensitive values kept out of source code
+- **Docker Compatibility**: Works well with containerized deployments
+- **Twelve-Factor Alignment**: Follows modern application design principles
+
+#### Disadvantages
+- **Type Safety**: Limited type checking for configuration values
+- **Documentation**: Configuration options may not be self-documenting
+- **Default Values**: Requires additional code for defaults and validation
+- **Complex Configurations**: Limited structure for nested configurations
+
+Environment variables provide a simple and effective configuration approach for this application, though structured configuration files might offer better organization for more complex applications.
+
 ## License
 
 MIT
