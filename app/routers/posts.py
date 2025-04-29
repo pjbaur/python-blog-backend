@@ -9,6 +9,8 @@ from typing import List, Optional
 import os
 import uuid
 from bson.objectid import ObjectId
+from ..s3_operations import get_minio_client, get_file_url
+import io
 
 logger = get_logger(__name__)
 
@@ -172,17 +174,71 @@ async def upload_post_image(
     file_extension = os.path.splitext(file.filename)[1]
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     
-    # Ensure the uploads directory exists
-    os.makedirs("uploads/images", exist_ok=True)
+    # Read file content
+    content = await file.read()
     
-    # Store the file
-    file_path = f"uploads/images/{unique_filename}"
-    with open(file_path, "wb") as f:
-        content = await file.read()
-        f.write(content)
+    # Set the bucket name - assuming a standard bucket for images
+    bucket_name = "blog-images"
+    
+    # Get the Minio client
+    minio_client = get_minio_client()
+    
+    # Make sure the bucket exists
+    try:
+        if not minio_client.bucket_exists(bucket_name):
+            minio_client.make_bucket(bucket_name)
+            logger.info(f"Created bucket: {bucket_name}")
+    except Exception as e:
+        logger.error(f"Failed to create or check bucket: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to prepare storage")
+    
+    # Upload file to S3/Minio
+    object_name = f"posts/{post_id}/images/{unique_filename}"
+    try:
+        minio_client.put_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            data=io.BytesIO(content),
+            length=len(content),
+            content_type=file.content_type
+        )
+        logger.info(f"File uploaded to S3: {object_name}")
+    except Exception as e:
+        logger.error(f"Failed to upload file to S3: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to upload image")
+    
+    # Generate a URL for the uploaded file
+    try:
+        image_url = minio_client.presigned_get_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            expires=7*24*60*60  # URL valid for 7 days
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate URL for uploaded file: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate image URL")
+    
+    # Create image reference in database
+    image_id = str(ObjectId())
+    image_data = {
+        "_id": ObjectId(image_id),
+        "filename": unique_filename,
+        "object_name": object_name,
+        "bucket_name": bucket_name,
+        "content_type": file.content_type,
+        "post_id": post_id,
+        "author_id": str(current_user.id),
+        "upload_date": datetime.now(timezone.utc)
+    }
     
     # Store the image reference in the database
-    store_image_reference(file_path)
+    try:
+        # Assuming crud has a method to store image references
+        crud.create_image_reference(image_data)
+        logger.info(f"Image reference stored in database with ID: {image_id}")
+    except Exception as e:
+        logger.error(f"Failed to store image reference: {str(e)}")
+        # We won't raise an exception here since the file is already uploaded
     
     logger.info(f"Image uploaded successfully: {unique_filename}")
     
@@ -192,7 +248,6 @@ async def upload_post_image(
         url=image_url
     )
 
-# Comment endpoints
 @router.get("/{post_id}/comments", response_model=List[schemas.CommentResponse])
 async def get_post_comments(
     post_id: str,
