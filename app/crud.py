@@ -1,5 +1,5 @@
-from .models import UserModel, PostModel, CommentModel
-from .database import db, users_collection, posts_collection, comments_collection
+from .models import UserModel, PostModel, CommentModel, ImageModel
+from .database import db, users_collection, posts_collection, comments_collection, images_collection
 from bson.objectid import ObjectId
 from .logger import get_logger
 from typing import Dict, Any, Optional
@@ -430,4 +430,125 @@ def setup_comment_indexes():
         logger.info("Successfully created indexes for comments collection")
     except Exception as e:
         logger.error(f"Error setting up indexes for comments collection: {str(e)}")
+        raise
+
+# Image CRUD operations
+def store_image_reference(image: ImageModel):
+    """Store information about an uploaded image in the database.
+    
+    This function takes an ImageModel object containing details about an uploaded image
+    and saves it to the images collection in the database.
+    
+    Args:
+        image (ImageModel): The image information to store.
+        
+    Returns:
+        ImageModel: The stored image object with its ID populated.
+        
+    Raises:
+        Exception: If there is an error storing the image reference.
+    """
+    image_dict = image.dict(by_alias=True, exclude_unset=True)
+    if "_id" in image_dict and image_dict["_id"] is None:
+        del image_dict["_id"]
+    
+    logger.info(f"Storing reference for image: {image.filename}")
+    try:
+        insert_result = images_collection.insert_one(image_dict)
+        image.id = str(insert_result.inserted_id)
+        logger.info(f"Image reference stored with ID: {image.id}")
+        return image
+    except Exception as e:
+        logger.error(f"Error storing image reference: {str(e)}")
+        raise
+
+def get_image_by_id(image_id: str):
+    """Retrieve an image reference by its ID.
+    
+    Args:
+        image_id (str): The ID of the image to retrieve.
+        
+    Returns:
+        ImageModel: The image information if found, None otherwise.
+        
+    Raises:
+        Exception: If there is an error retrieving the image reference.
+    """
+    logger.debug(f"Retrieving image by ID: {image_id}")
+    try:
+        image_data = images_collection.find_one({"_id": ObjectId(image_id)})
+        if image_data:
+            logger.debug(f"Found image with ID: {image_id}")
+            return ImageModel(**image_data)
+        logger.debug(f"Image not found with ID: {image_id}")
+        return None
+    except Exception as e:
+        logger.error(f"Error retrieving image by ID: {str(e)}")
+        raise
+
+def get_images_by_user(user_id: str, limit: int = 100, skip: int = 0):
+    """Retrieve images uploaded by a specific user with pagination.
+    
+    Args:
+        user_id (str): The ID of the user who uploaded the images.
+        limit (int, optional): Maximum number of images to return. Defaults to 100.
+        skip (int, optional): Number of images to skip for pagination. Defaults to 0.
+        
+    Returns:
+        list[ImageModel]: A list of images uploaded by the specified user.
+        
+    Raises:
+        Exception: If there is an error retrieving the images.
+    """
+    logger.info(f"Retrieving images by user ID: {user_id}")
+    images = []
+    try:
+        for image_data in images_collection.find({"uploaded_by": user_id}).skip(skip).limit(limit).sort("upload_date", -1):
+            images.append(ImageModel(**image_data))
+        logger.info(f"Retrieved {len(images)} images for user: {user_id}")
+        return images
+    except Exception as e:
+        logger.error(f"Error retrieving images by user: {str(e)}")
+        raise
+
+def delete_image(image_id: str):
+    """Delete an image reference from the database.
+    
+    This function only removes the reference from the database,
+    it does not delete the actual image file from storage.
+    
+    Args:
+        image_id (str): The ID of the image reference to delete.
+        
+    Returns:
+        DeleteResult: The result of the deletion operation.
+        
+    Raises:
+        Exception: If there is an error deleting the image reference.
+    """
+    logger.warning(f"Deleting image reference with ID: {image_id}")
+    try:
+        result = images_collection.delete_one({"_id": ObjectId(image_id)})
+        if result.deleted_count > 0:
+            logger.info(f"Successfully deleted image reference: {image_id}")
+        else:
+            logger.warning(f"Image reference not found for deletion: {image_id}")
+        return result
+    except Exception as e:
+        logger.error(f"Error deleting image reference {image_id}: {str(e)}")
+        raise
+
+def setup_image_indexes():
+    """Set up MongoDB indexes for the images collection for optimal performance."""
+    logger.info("Setting up indexes for images collection")
+    try:
+        # Create indexes for common query patterns
+        images_collection.create_index("uploaded_by")
+        images_collection.create_index("upload_date")
+        images_collection.create_index("filename")
+        # Compound index for sorting images by upload date for a specific user
+        images_collection.create_index([("uploaded_by", 1), ("upload_date", -1)])
+        logger.info("Successfully created indexes for images collection")
+    except Exception as e:
+        logger.error(f"Error setting up indexes for images collection: {str(e)}")
         raise

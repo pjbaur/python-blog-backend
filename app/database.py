@@ -29,4 +29,5 @@ logger.info(f"Using database: blog_db")
 users_collection = db['users']
 posts_collection = db['posts']
 comments_collection = db['comments']
+images_collection = db['images']
 logger.info("Database collections initialized")

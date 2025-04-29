@@ -191,6 +191,9 @@ python-blog-backend/
 └── README.md
 ```
 
+## Dependencies
+- Install MinioClient locally: `pip install -e ../minio-client`
+
 ## Trade-offs
 
 ### Business Logic in Routes vs. Service Layer

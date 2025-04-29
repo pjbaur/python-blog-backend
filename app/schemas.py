@@ -199,6 +199,18 @@ class CommentUpdateRequest(BaseModel):
     # is_hidden: Optional[bool] = None
 
 # Image Schemas
+class ImageCreateRequest(BaseModel):
+    """Schema for creating a new image reference.
+    
+    This schema is used to parse the request body for image reference creation.
+    It contains the required fields for storing information about an uploaded image."""
+    filename: str
+    filepath: str
+    url: str
+    uploaded_by: str
+    file_size: int
+    content_type: str
+
 class ImageResponse(BaseModel):
     """Schema for image response.
     
@@ -207,6 +219,10 @@ class ImageResponse(BaseModel):
     id: str
     filename: str
     url: str
+    uploaded_by: str
+    upload_date: datetime
+    file_size: int
+    content_type: str
     
     class Config:
         orm_mode = True

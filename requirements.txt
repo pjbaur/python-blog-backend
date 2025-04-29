@@ -1,10 +1,10 @@
+# Core dependencies
 annotated-types==0.7.0
 anyio==4.8.0
 bcrypt==4.2.1
 certifi==2025.1.31
 cffi==1.17.1
 click==8.1.8
-coverage==7.8.0
 cryptography==44.0.1
 dnspython==2.7.0
 dotenv==0.9.9
@@ -25,8 +25,6 @@ pydantic==2.10.6
 pydantic_core==2.27.2
 PyJWT==2.10.1
 pymongo==4.11.1
-pytest==8.3.4
-pytest-cov==6.1.1
 python-dotenv==1.0.1
 python-jose==3.4.0
 python-multipart==0.0.20
@@ -37,3 +35,15 @@ starlette==0.45.3
 typing_extensions==4.12.2
 uvicorn==0.34.0
 zxcvbn==4.5.0
+
+# MinioClient's dependencies
+minio==7.2.15
+colorama==0.4.6
+
+# Dev/test tools
+coverage==7.8.0
+pytest==8.3.4
+pytest-cov==6.1.1
+
+# Editable install of the minio helper library
+-e ../minio-client

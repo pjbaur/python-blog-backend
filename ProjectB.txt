@@ -1,0 +1,140 @@
+%% app/__init__.py %%
+
+%% end %%
+
+%% app/s3_operations.py %%
+"""
+S3/Minio operations for handling file uploads and retrievals
+"""
+# METHOD 1: Add the minio-client project to Python path and import directly
+# import sys
+# sys.path.append("/Users/paulbaur/projects/minio-client")
+
+# Now try these import statements one at a time (uncomment only one):
+
+# Try 1: If MinioClient is in the root of the project
+from minio_client import MinioClient
+
+# Try 2: If MinioClient is in a module named differently than the project folder
+# from client import MinioClient
+
+# Try 3: If MinioClient is in a src directory
+# from src.minio_client import MinioClient 
+# or
+# from src.client import MinioClient
+
+# Try 4: If the project has a specific module structure
+# from minio_client.client import MinioClient
+
+# METHOD 2: Alternative approach if your package is properly installed
+# import minio_client
+# MinioClient = minio_client.MinioClient
+
+# Example configuration for MinioClient
+MINIO_CONFIG = {
+    "endpoint": "your-minio-endpoint:9000",  # Replace with your actual endpoint
+    "access_key": "your-access-key",         # Replace with your access key
+    "secret_key": "your-secret-key",         # Replace with your secret key
+    "secure": False                          # Set to True if using HTTPS
+}
+
+def get_minio_client():
+    """
+    Create and return a configured MinioClient instance
+    """
+    return MinioClient(
+        endpoint=MINIO_CONFIG["endpoint"],
+        access_key=MINIO_CONFIG["access_key"],
+        secret_key=MINIO_CONFIG["secret_key"],
+        secure=MINIO_CONFIG["secure"]
+    )
+
+def upload_file(file_path, bucket_name, object_name=None):
+    """
+    Upload a file to the specified S3/Minio bucket
+    
+    Args:
+        file_path (str): Path to the file on local filesystem
+        bucket_name (str): Name of the bucket
+        object_name (str, optional): Object name in the bucket. If not specified, file_path's basename is used
+        
+    Returns:
+        str: URL of the uploaded object
+    """
+    client = get_minio_client()
+    return client.upload_file(file_path, bucket_name, object_name)
+
+def download_file(bucket_name, object_name, file_path):
+    """
+    Download a file from the specified S3/Minio bucket
+    
+    Args:
+        bucket_name (str): Name of the bucket
+        object_name (str): Object name in the bucket
+        file_path (str): Path where the file will be saved
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    client = get_minio_client()
+    return client.download_file(bucket_name, object_name, file_path)
+
+def get_file_url(bucket_name, object_name, expires=3600):
+    """
+    Get a presigned URL for the object
+    
+    Args:
+        bucket_name (str): Name of the bucket
+        object_name (str): Object name in the bucket
+        expires (int, optional): Expiration time in seconds. Default is 1 hour.
+        
+    Returns:
+        str: Presigned URL
+    """
+    client = get_minio_client()
+    return client.get_presigned_url(bucket_name, object_name, expires)
+
+%% end %%
+
+%% requirements.txt %%
+annotated-types==0.7.0
+anyio==4.8.0
+bcrypt==4.2.1
+certifi==2025.1.31
+cffi==1.17.1
+click==8.1.8
+coverage==7.8.0
+cryptography==44.0.1
+dnspython==2.7.0
+dotenv==0.9.9
+ecdsa==0.19.0
+email_validator==2.2.0
+fastapi==0.115.8
+h11==0.14.0
+httpcore==1.0.7
+httpx==0.28.1
+idna==3.10
+iniconfig==2.0.0
+packaging==24.2
+passlib==1.7.4
+pluggy==1.5.0
+pyasn1==0.4.8
+pycparser==2.22
+pydantic==2.10.6
+pydantic_core==2.27.2
+PyJWT==2.10.1
+pymongo==4.11.1
+pytest==8.3.4
+pytest-cov==6.1.1
+python-dotenv==1.0.1
+python-jose==3.4.0
+python-multipart==0.0.20
+rsa==4.9
+six==1.17.0
+sniffio==1.3.1
+starlette==0.45.3
+typing_extensions==4.12.2
+uvicorn==0.34.0
+zxcvbn==4.5.0
+
+%% end %%

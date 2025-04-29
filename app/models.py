@@ -57,3 +57,28 @@ class CommentModel(BaseModel):
     updated_at: Optional[datetime] = None
     is_published: bool = True
     is_deleted: bool = False
+
+class ImageModel(BaseModel):
+    """Model for storing image references.
+    
+    This model is used to store information about uploaded images,
+    including their filenames and storage locations.
+    
+    Attributes:
+        id (ObjectIdStr): The unique identifier for the image.
+        filename (str): The original filename of the image.
+        filepath (str): The path where the image is stored.
+        url (str): The URL to access the image.
+        uploaded_by (str): The ID of the user who uploaded the image.
+        upload_date (datetime): The date and time when the image was uploaded.
+        file_size (int): The size of the image file in bytes.
+        content_type (str): The MIME type of the image.
+    """
+    id: Optional[ObjectIdStr] = Field(None, alias='_id')
+    filename: str
+    filepath: str
+    url: str
+    uploaded_by: str
+    upload_date: datetime = Field(default_factory=datetime.utcnow)
+    file_size: int
+    content_type: str

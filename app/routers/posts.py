@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
+
+from app.routers.utils import store_image_reference
 from .. import auth, crud, schemas
 from ..models import UserModel, PostModel, CommentModel
 from datetime import datetime, timezone
@@ -173,17 +175,14 @@ async def upload_post_image(
     # Ensure the uploads directory exists
     os.makedirs("uploads/images", exist_ok=True)
     
-    # Save the file
+    # Store the file
     file_path = f"uploads/images/{unique_filename}"
     with open(file_path, "wb") as f:
         content = await file.read()
         f.write(content)
     
     # Store the image reference in the database
-    # This is a simplified implementation - in a real app you'd store this in MongoDB
-    image_id = str(uuid.uuid4())
-    base_url = os.getenv("BASE_URL", "http://localhost:8000")
-    image_url = f"{base_url}/{file_path}"
+    store_image_reference(file_path)
     
     logger.info(f"Image uploaded successfully: {unique_filename}")
     
