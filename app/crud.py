@@ -552,3 +552,129 @@ def setup_image_indexes():
     except Exception as e:
         logger.error(f"Error setting up indexes for images collection: {str(e)}")
         raise
+
+# Search operations
+def search_posts_v2(query: str, limit: int = 10, skip: int = 0, sort_by: str = "created_at", sort_direction: int = -1):
+    """
+    Search for posts matching a search query.
+    
+    Args:
+        query (str): The search query
+        limit (int, optional): Maximum number of results to return. Defaults to 10.
+        skip (int, optional): Number of results to skip. Defaults to 0.
+        sort_by (str, optional): Field to sort by. Defaults to "created_at".
+        sort_direction (int, optional): Sort direction (1 for ascending, -1 for descending). Defaults to -1.
+        
+    Returns:
+        list: List of matching posts
+    """
+    logger.info(f"Searching posts with query: {query}")
+    posts = []
+    try:
+        # Use MongoDB's text search
+        search_query = {"$text": {"$search": query}, "is_published": True}
+        
+        # Add scoring to search results
+        score_field = {"score": {"$meta": "textScore"}}
+        
+        # If sorting by relevance (text score), use score as the sort key
+        if sort_by == "relevance":
+            sort_specification = {"score": {"$meta": "textScore"}}
+        else:
+            sort_specification = {sort_by: sort_direction}
+        
+        # Execute the search query
+        cursor = posts_collection.find(
+            search_query,
+            projection=score_field
+        ).sort(
+            sort_specification
+        ).skip(skip).limit(limit)
+        
+        # Convert results to PostModel objects
+        for post_data in cursor:
+            post = PostModel(**post_data)
+            # Calculate a content preview from the post content
+            post.content_preview = post.content[:200] + "..." if len(post.content) > 200 else post.content
+            posts.append(post)
+            
+        logger.info(f"Found {len(posts)} posts matching search query")
+        return posts
+    except Exception as e:
+        logger.error(f"Error searching posts: {str(e)}")
+        raise
+
+def search_comments(query: str, limit: int = 10, skip: int = 0, sort_by: str = "created_at", sort_direction: int = -1):
+    """
+    Search for comments matching a search query.
+    
+    Args:
+        query (str): The search query
+        limit (int, optional): Maximum number of results to return. Defaults to 10.
+        skip (int, optional): Number of results to skip. Defaults to 0.
+        sort_by (str, optional): Field to sort by. Defaults to "created_at".
+        sort_direction (int, optional): Sort direction (1 for ascending, -1 for descending). Defaults to -1.
+        
+    Returns:
+        list: List of matching comments
+    """
+    logger.info(f"Searching comments with query: {query}")
+    comments = []
+    try:
+        # Use MongoDB's text search
+        search_query = {"$text": {"$search": query}, "is_published": True}
+        
+        # Add scoring to search results
+        score_field = {"score": {"$meta": "textScore"}}
+        
+        # If sorting by relevance (text score), use score as the sort key
+        if sort_by == "relevance":
+            sort_specification = {"score": {"$meta": "textScore"}}
+        else:
+            sort_specification = {sort_by: sort_direction}
+        
+        # Execute the search query
+        cursor = comments_collection.find(
+            search_query,
+            projection=score_field
+        ).sort(
+            sort_specification
+        ).skip(skip).limit(limit)
+        
+        # Convert results to CommentModel objects
+        for comment_data in cursor:
+            comment = CommentModel(**comment_data)
+            # Calculate a content preview from the comment content
+            comment.content_preview = comment.content[:200] + "..." if len(comment.content) > 200 else comment.content
+            comments.append(comment)
+            
+        logger.info(f"Found {len(comments)} comments matching search query")
+        return comments
+    except Exception as e:
+        logger.error(f"Error searching comments: {str(e)}")
+        raise
+
+def setup_search_indexes():
+    """
+    Set up MongoDB text indexes for search functionality.
+    
+    This creates text indexes on the posts and comments collections
+    for efficient full-text search across the database.
+    """
+    logger.info("Setting up text indexes for search functionality")
+    try:
+        # Create text index for posts collection
+        posts_collection.create_index([
+            ("title", "text"), 
+            ("content", "text")
+        ], name="post_text_search")
+        
+        # Create text index for comments collection
+        comments_collection.create_index([
+            ("content", "text")
+        ], name="comment_text_search")
+        
+        logger.info("Successfully created text indexes for search functionality")
+    except Exception as e:
+        logger.error(f"Error setting up text indexes: {str(e)}")
+        raise

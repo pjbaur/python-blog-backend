@@ -226,3 +226,51 @@ class ImageResponse(BaseModel):
     
     class Config:
         orm_mode = True
+
+# Search Schemas
+class SearchItem(BaseModel):
+    """Base schema for search results.
+    
+    This schema is used to represent a single search result item.
+    It contains the common fields that are returned for any type of search result."""
+    id: str
+    type: str  # "post" or "comment"
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    content_preview: str
+    author_id: str
+    
+    class Config:
+        orm_mode = True
+
+class SearchPostResult(SearchItem):
+    """Schema for post search results.
+    
+    This schema extends the base SearchItem with post-specific fields."""
+    title: str
+    post_id: Optional[str] = None  # This will be the same as id for posts
+    
+    class Config:
+        orm_mode = True
+
+class SearchCommentResult(SearchItem):
+    """Schema for comment search results.
+    
+    This schema extends the base SearchItem with comment-specific fields."""
+    post_id: str
+    
+    class Config:
+        orm_mode = True
+
+class SearchResponse(BaseModel):
+    """Schema for search response.
+    
+    This schema is used to format the response body for search operations.
+    It contains metadata about the search and an array of search results."""
+    total: int
+    page: int
+    limit: int
+    results: List[SearchItem]
+    
+    class Config:
+        orm_mode = True

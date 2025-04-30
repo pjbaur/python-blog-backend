@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
@@ -8,6 +9,9 @@ from app.database import db
 from app.logger import get_logger
 
 logger = get_logger(__name__)
+
+# Set testing environment variable for the s3_operations mock
+os.environ["TESTING"] = "true"
 
 def create_test_token(data: dict, expires_delta: timedelta = None, token_type: str = "access"):
     """
@@ -38,40 +42,23 @@ def create_test_token(data: dict, expires_delta: timedelta = None, token_type: s
 
 @pytest.fixture
 def mock_user():
-    """Creates a mock user in the database for testing purposes and returns the user ID.
-    This user will not have any tokens associated with it.
-    The user is created with a hashed password and other necessary fields.
-    The user is removed from the database after the test is completed.
-    """
-    logger.debug("Creating mock user")
-
-    # Create a test user ID in ObjectId format
-    user_id = str(ObjectId())
-    logger.debug(f"User ID: {user_id}")
-    
-    # Mock inserting the token in the database
+    """Create a test user and return the user ID"""
     from app.database import db
-    from app.auth import get_password_hash
     
-    # Create a test user with an empty token list
-    test_user = {
+    user_id = str(ObjectId())
+    db['users'].insert_one({
         "_id": ObjectId(user_id),
-        "email": "testuser@example.com",
-        "hashed_password": get_password_hash("testpassword"),
+        "email": f"test.user.{user_id}@example.com",
+        "hashed_password": "$2b$12$uKJUPbsJdWJoqm.n.Z1ME.26.dYnzKPyW4vZF8KWQUbW687MRbFpy",  # password is "password"
         "is_active": True,
         "is_admin": False,
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
+        "created_at": datetime.utcnow(),
         "tokens": []
-    }
-    logger.debug(f"Test user: {test_user}")
-    
-    # Insert the user in the database
-    db['users'].insert_one(test_user)
+    })
     
     yield user_id
     
-    # Clean up - remove the test user
+    # Clean up
     db['users'].delete_one({"_id": ObjectId(user_id)})
 
 @pytest.fixture

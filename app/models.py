@@ -46,6 +46,9 @@ class PostModel(BaseModel):
     author_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
+    categories: List[int] = []
+    is_published: bool = True
+    content_preview: Optional[str] = None
 
 class CommentModel(BaseModel):
     id: Optional[ObjectIdStr] = Field(None, alias='_id')
@@ -57,6 +60,7 @@ class CommentModel(BaseModel):
     updated_at: Optional[datetime] = None
     is_published: bool = True
     is_deleted: bool = False
+    content_preview: Optional[str] = None
 
 class ImageModel(BaseModel):
     """Model for storing image references.

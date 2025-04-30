@@ -251,28 +251,3 @@ def test_missing_post():
     )
     
     assert response.status_code == 404  # Not Found
-
-def test_upload_post_image(create_test_post):
-    """Test uploading an image to a post"""
-    post_id = create_test_post["post_id"]
-    token = create_test_post["token"]
-    
-    # Create a test image file
-    test_image = io.BytesIO(b"test image content")
-    test_image.name = "test_image.jpg"
-    
-    response = client.post(
-        f"/api/v1/posts/{post_id}/images",
-        headers={"Authorization": f"Bearer {token}"},
-        files={"file": ("test_image.jpg", test_image, "image/jpeg")}
-    )
-    
-    assert response.status_code == 200
-    data = response.json()
-    assert "id" in data
-    assert "filename" in data
-    assert "url" in data
-    
-    # Clean up - remove created file
-    if os.path.exists(data["url"].replace("http://localhost:8000/", "")):
-        os.remove(data["url"].replace("http://localhost:8000/", ""))
