@@ -13,7 +13,8 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 - **Blog Post Management**: Create, read, update, and delete blog posts
 - **Comment System**: Support for nested comments on blog posts with separate collection
 - **Admin Panel**: Protected endpoints for administrative functions
-- **Image Upload**: Support for uploading images for blog posts
+- **Search Functionality**: Advanced search capabilities for posts and content
+- **Image Upload**: Support for uploading images for blog posts with S3 storage integration
 - **Dockerized**: Easy deployment with Docker
 
 ## Tech Stack
@@ -22,6 +23,7 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 - **Database**: [MongoDB](https://www.mongodb.com/)
 - **Authentication**: JWT tokens via [python-jose](https://github.com/mpdavis/python-jose) and [passlib](https://passlib.readthedocs.io/)
 - **Password Strength**: [zxcvbn](https://github.com/dropbox/zxcvbn) for reliable password strength estimation
+- **Storage**: Local file system and S3-compatible object storage via MinioClient
 - **Testing**: [pytest](https://docs.pytest.org/)
 - **Containerization**: Docker
 
@@ -103,6 +105,9 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 - DELETE /api/v1/comments/{comment_id} — Delete a comment (requires ownership)
 - POST /api/v1/comments/{comment_id}/replies — Create a reply to a comment
 
+### Search
+- GET /api/v1/search — Search posts and content with advanced filtering options
+
 ## Development
 
 ### Running Tests
@@ -163,13 +168,16 @@ python-blog-backend/
 │   ├── password_validation.py # Password strength and history validation
 │   ├── routes.py        # Main API routes
 │   ├── schemas.py       # Pydantic schemas
+│   ├── s3_operations.py # S3 storage integration
 │   ├── routers/         # Modular API routers
 │   │   ├── __init__.py
 │   │   ├── admin.py     # Admin endpoints
 │   │   ├── auth.py      # Auth endpoints
 │   │   ├── comments.py  # Comment endpoints 
 │   │   ├── posts.py     # Post endpoints
-│   │   └── users.py     # User endpoints
+│   │   ├── search.py    # Search endpoints
+│   │   ├── users.py     # User endpoints
+│   │   └── utils.py     # Utility functions
 │   └── tests/           # Test directory
 │       ├── __init__.py
 │       ├── test_admin_api.py
@@ -178,12 +186,15 @@ python-blog-backend/
 │       ├── test_crud.py
 │       ├── test_password_change.py
 │       ├── test_posts.py
+│       ├── test_search.py
 │       ├── test_users.py
 │       └── test_utils.py
 ├── changes/             # Change documentation
 ├── documentation/       # Project documentation
 ├── logs/                # Application logs
 ├── uploads/             # Uploaded files (images)
+│   └── images/          # Image storage directory
+├── resources/           # Additional resources
 ├── Dockerfile           # Docker configuration
 ├── requirements.txt     # Python dependencies
 ├── env.template         # Environment variables template
@@ -304,23 +315,24 @@ The application uses a router-based organization pattern.
 
 This structure works well for an API-focused application but alternatives like domain-driven design might better separate business concerns as the application grows.
 
-### Local File Storage for Images
+### Image Storage Strategy
 
-Images are stored in the local filesystem rather than cloud storage solutions.
+Images can be stored either in the local filesystem or in S3-compatible cloud storage.
 
-#### Advantages
-- **Simplicity**: No external dependencies or configurations
-- **Development Friendly**: Easy to set up and test locally
-- **Cost**: No additional cloud storage costs
-- **Control**: Complete control over the storage system
+#### Advantages of S3 Integration
+- **Scalability**: Virtually unlimited storage capacity
+- **Reliability**: Built-in redundancy and high availability
+- **CDN Integration**: Easy to serve through content delivery networks
+- **Security**: Granular access control and encryption options
+- **Managed Service**: No need to manage storage infrastructure
 
-#### Disadvantages
-- **Scalability Concerns**: Limited by local disk space
-- **Reliability**: No built-in redundancy or backup
-- **Distribution Challenges**: Harder to serve from CDNs or distribute geographically
-- **Deployment Complexity**: Requires persistent volumes in containerized deployments
+#### Disadvantages of S3 Integration
+- **Cost**: Additional expenses for storage and bandwidth
+- **Complexity**: More configuration required compared to local storage
+- **Dependencies**: External service dependency
+- **Setup**: Requires S3-compatible service configuration
 
-Local storage works for development and small deployments, but production applications would benefit from using S3 or similar cloud storage solutions for scalability and reliability.
+The application supports both local and S3 storage options, allowing flexibility depending on deployment needs. Local storage works well for development and testing, while S3 is recommended for production deployments.
 
 ### Error Handling Strategy
 
