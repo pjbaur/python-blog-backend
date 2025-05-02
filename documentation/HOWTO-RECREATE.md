@@ -1,6 +1,4 @@
-pjbaur: Don't make any changes. Please describe this application exaustively so that it could be duplicated by supplying your answer to an AI prompt. Include its features, user workflows, and data requirements.
-
-GitHub Copilot: # Python Blog Backend Application Overview
+# Python Blog Backend Application Overview
 
 I'll provide an exhaustive description of the Python blog backend application based on the codebase, covering its architecture, features, user workflows, and data requirements.
 
@@ -93,10 +91,6 @@ The application follows a clean, modular architecture:
 - User management
 - Content moderation capabilities
 
-### 5.6 Image Uploads
-- Support for image uploads
-- Image storage in uploads/images directory
-
 ## 6. API Endpoints
 
 ### 6.1 Authentication Endpoints
@@ -177,8 +171,7 @@ The application follows a clean, modular architecture:
 - Logging configuration
 
 ### 8.3 File Storage
-- Uploaded images stored in filesystem
-- Organized directory structure for uploads
+(No longer used; image upload and file storage are not part of the current application.)
 
 ## 9. Security Measures
 

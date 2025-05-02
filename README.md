@@ -159,26 +159,26 @@ When the application is running, you can access:
 python-blog-backend/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py          # Application entry point
-│   ├── auth.py          # Authentication logic
-│   ├── crud.py          # Database operations
-│   ├── database.py      # Database connection
-│   ├── logger.py        # Logging configuration
-│   ├── models.py        # Data models
-│   ├── password_validation.py # Password strength and history validation
-│   ├── routes.py        # Main API routes
-│   ├── schemas.py       # Pydantic schemas
-│   ├── s3_operations.py # S3 storage integration
-│   ├── routers/         # Modular API routers
+│   ├── main.py
+│   ├── auth.py
+│   ├── crud.py
+│   ├── database.py
+│   ├── logger.py
+│   ├── models.py
+│   ├── object_storage.py
+│   ├── password_validation.py
+│   ├── routes.py
+│   ├── schemas.py
+│   ├── routers/
 │   │   ├── __init__.py
-│   │   ├── admin.py     # Admin endpoints
-│   │   ├── auth.py      # Auth endpoints
-│   │   ├── comments.py  # Comment endpoints 
-│   │   ├── posts.py     # Post endpoints
-│   │   ├── search.py    # Search endpoints
-│   │   ├── users.py     # User endpoints
-│   │   └── utils.py     # Utility functions
-│   └── tests/           # Test directory
+│   │   ├── admin.py
+│   │   ├── auth.py
+│   │   ├── comments.py
+│   │   ├── posts.py
+│   │   ├── search.py
+│   │   ├── users.py
+│   │   └── utils.py
+│   └── tests/
 │       ├── __init__.py
 │       ├── test_admin_api.py
 │       ├── test_auth_tokens.py
@@ -189,16 +189,16 @@ python-blog-backend/
 │       ├── test_search.py
 │       ├── test_users.py
 │       └── test_utils.py
-├── changes/             # Change documentation
-├── documentation/       # Project documentation
-├── logs/                # Application logs
-├── uploads/             # Uploaded files (images)
-│   └── images/          # Image storage directory
-├── resources/           # Additional resources
-├── Dockerfile           # Docker configuration
-├── requirements.txt     # Python dependencies
-├── env.template         # Environment variables template
-├── CODE_OF_CONDUCT.md   # Code of conduct
+├── changes/
+├── documentation/
+├── logs/
+├── uploads/
+│   └── images/
+├── resources/
+├── Dockerfile
+├── requirements.txt
+├── env.template
+├── CODE_OF_CONDUCT.md
 └── README.md
 ```
 
