@@ -9,7 +9,7 @@ from typing import List, Optional
 import os
 import uuid
 from bson.objectid import ObjectId
-from ..s3_operations import get_minio_client, get_file_url
+from ..object_storage import get_minio_client, get_file_url
 import io
 
 logger = get_logger(__name__)
