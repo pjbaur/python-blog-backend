@@ -58,7 +58,7 @@ paths:
 {
   "_id": ObjectId,
   "title": String,
-  "content": String,
+  "body": String,
   "author": ObjectId,
   "tags": [String],
   "created_at": ISODate,

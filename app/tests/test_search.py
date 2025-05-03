@@ -23,7 +23,7 @@ updated_time = created_time + timedelta(hours=1)
 mock_post = {
     "_id": ObjectId(mock_post_id),
     "title": "Test Post Title",
-    "content": "This is a test post content with searchable keywords",
+    "body": "This is a test post body with searchable keywords",
     "author_id": mock_user_id,
     "created_at": created_time,
     "updated_at": updated_time,
@@ -33,7 +33,7 @@ mock_post = {
 mock_post2 = {
     "_id": ObjectId(mock_post_id2),
     "title": "Another Test Post",
-    "content": "Different content with some search terms",
+    "body": "Different body with some search terms",
     "author_id": mock_user_id,
     "created_at": created_time - timedelta(days=1),
     "updated_at": updated_time - timedelta(days=1),
@@ -45,7 +45,7 @@ mock_comment = {
     "_id": ObjectId(mock_comment_id),
     "post_id": mock_post_id,
     "author_id": mock_user_id,
-    "content": "This is a test comment with searchable keywords",
+    "body": "This is a test comment with searchable keywords",
     "created_at": created_time,
     "updated_at": updated_time,
     "is_published": True,
@@ -54,15 +54,15 @@ mock_comment = {
 
 # Helper function to create proper model objects
 def create_post_model(post_dict):
-    """Convert dictionary to PostModel with content_preview added"""
+    """Convert dictionary to PostModel with body_preview added"""
     post = crud.PostModel(**post_dict)
-    post.content_preview = post.content[:200] + "..." if len(post.content) > 200 else post.content
+    post.body_preview = post.body[:200] + "..." if len(post.body) > 200 else post.body
     return post
 
 def create_comment_model(comment_dict):
-    """Convert dictionary to CommentModel with content_preview added"""
+    """Convert dictionary to CommentModel with body_preview added"""
     comment = crud.CommentModel(**comment_dict)
-    comment.content_preview = comment.content[:200] + "..." if len(comment.content) > 200 else comment.content
+    comment.body_preview = comment.body[:200] + "..." if len(comment.body) > 200 else comment.body
     return comment
 
 
@@ -93,12 +93,12 @@ class TestSearchEndpoints:
         # Verify the posts in the results
         posts = [r for r in data["results"] if r["type"] == "post"]
         assert len(posts) == 1
-        assert "This is a test post content" in posts[0]["content_preview"]
+        assert "This is a test post body" in posts[0]["body_preview"]
         
         # Verify the comments in the results
         comments = [r for r in data["results"] if r["type"] == "comment"]
         assert len(comments) == 1
-        assert "test comment" in comments[0]["content_preview"]
+        assert "test comment" in comments[0]["body_preview"]
         
         # Verify the mocks were called correctly
         mock_search_posts_v2.assert_called_once_with(
@@ -344,9 +344,9 @@ class TestSearchCrudFunctions:
         # Verify indexes were created correctly
         mock_posts_create_index.assert_called_once_with([
             ("title", "text"), 
-            ("content", "text")
+            ("body", "text")
         ], name="post_text_search")
         
         mock_comments_create_index.assert_called_once_with([
-            ("content", "text")
+            ("body", "text")
         ], name="comment_text_search")

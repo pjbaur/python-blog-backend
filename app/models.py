@@ -42,25 +42,25 @@ class UserModel(BaseModel):
 class PostModel(BaseModel):
     id: Optional[ObjectIdStr] = Field(None, alias='_id')
     title: str
-    content: str
+    body: str  # Changed from "content" to "body" to match database schema
     author_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     categories: List[int] = []
     is_published: bool = True
-    content_preview: Optional[str] = None
+    body_preview: Optional[str] = None
 
 class CommentModel(BaseModel):
     id: Optional[ObjectIdStr] = Field(None, alias='_id')
     post_id: str
     author_id: str
-    content: str
+    body: str
     parent_id: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     is_published: bool = True
     is_deleted: bool = False
-    content_preview: Optional[str] = None
+    body_preview: Optional[str] = None
 
 class ImageModel(BaseModel):
     """Model for storing image references.

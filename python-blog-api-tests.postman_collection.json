@@ -487,7 +487,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Test Post Title\",\n  \"content\": \"This is the content of my test post.\",\n  \"categories\": [1, 2],\n  \"is_published\": true\n}"
+              "raw": "{\n  \"title\": \"Test Post Title\",\n  \"body\": \"This is the body of my test post.\",\n  \"categories\": [1, 2],\n  \"is_published\": true\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/posts",
@@ -511,7 +511,7 @@
                   "    const responseJson = pm.response.json();",
                   "    pm.expect(responseJson).to.have.property('id');",
                   "    pm.expect(responseJson).to.have.property('title');",
-                  "    pm.expect(responseJson).to.have.property('content');",
+                  "    pm.expect(responseJson).to.have.property('body');",
                   "    pm.expect(responseJson).to.have.property('author_id');",
                   "    pm.expect(responseJson.title).to.eql('Test Post Title');",
                   "    pm.expect(responseJson.author_id).to.eql(pm.environment.get(\"user_id\"));",
@@ -635,7 +635,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated Post Title\",\n  \"content\": \"This is the updated content of my test post.\",\n  \"categories\": [1, 2, 3],\n  \"is_published\": true\n}"
+              "raw": "{\n  \"title\": \"Updated Post Title\",\n  \"body\": \"This is the updated body of my test post.\",\n  \"categories\": [1, 2, 3],\n  \"is_published\": true\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/posts/{{post_id}}",
@@ -659,7 +659,7 @@
                   "    const responseJson = pm.response.json();",
                   "    pm.expect(responseJson.id).to.eql(pm.environment.get(\"post_id\"));",
                   "    pm.expect(responseJson.title).to.eql('Updated Post Title');",
-                  "    pm.expect(responseJson.content).to.eql('This is the updated content of my test post.');",
+                  "    pm.expect(responseJson.body).to.eql('This is the updated body of my test post.');",
                   "});"
                 ]
               }
@@ -773,7 +773,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"content\": \"This is a test comment on the post.\",\n  \"parent_id\": null\n}"
+              "raw": "{\n  \"body\": \"This is a test body on the post.\",\n  \"parent_id\": null\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/posts/{{post_id}}/comments",
@@ -796,10 +796,10 @@
                   "pm.test(\"Comment was created\", function () {",
                   "    const responseJson = pm.response.json();",
                   "    pm.expect(responseJson).to.have.property('id');",
-                  "    pm.expect(responseJson).to.have.property('content');",
+                  "    pm.expect(responseJson).to.have.property('body');",
                   "    pm.expect(responseJson).to.have.property('post_id');",
                   "    pm.expect(responseJson).to.have.property('author_id');",
-                  "    pm.expect(responseJson.content).to.eql('This is a test comment on the post.');",
+                  "    pm.expect(responseJson.body).to.eql('This is a test comment on the post.');",
                   "    pm.expect(responseJson.post_id).to.eql(pm.environment.get(\"post_id\"));",
                   "    pm.expect(responseJson.author_id).to.eql(pm.environment.get(\"user_id\"));",
                   "});",
@@ -876,7 +876,7 @@
                   "pm.test(\"Comment details are correct\", function () {",
                   "    const responseJson = pm.response.json();",
                   "    pm.expect(responseJson.id).to.eql(pm.environment.get(\"comment_id\"));",
-                  "    pm.expect(responseJson.content).to.eql('This is a test comment on the post.');",
+                  "    pm.expect(responseJson.body).to.eql('This is a test comment on the post.');",
                   "    pm.expect(responseJson.author_id).to.eql(pm.environment.get(\"user_id\"));",
                   "});"
                 ]
@@ -900,7 +900,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"content\": \"Updated comment content\",\n  \"is_published\": true\n}"
+              "raw": "{\n  \"body\": \"Updated comment body\",\n  \"is_published\": true\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/comments/{{comment_id}}",
@@ -923,7 +923,7 @@
                   "pm.test(\"Comment was updated\", function () {",
                   "    const responseJson = pm.response.json();",
                   "    pm.expect(responseJson.id).to.eql(pm.environment.get(\"comment_id\"));",
-                  "    pm.expect(responseJson.content).to.eql('Updated comment content');",
+                  "    pm.expect(responseJson.body).to.eql('Updated comment body');",
                   "});"
                 ]
               }
@@ -946,7 +946,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"content\": \"This is a reply to the comment.\"\n}"
+              "raw": "{\n  \"body\": \"This is a reply to the comment.\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/comments/{{comment_id}}/replies",
@@ -969,9 +969,9 @@
                   "pm.test(\"Reply was created\", function () {",
                   "    const responseJson = pm.response.json();",
                   "    pm.expect(responseJson).to.have.property('id');",
-                  "    pm.expect(responseJson).to.have.property('content');",
+                  "    pm.expect(responseJson).to.have.property('body');",
                   "    pm.expect(responseJson).to.have.property('parent_id');",
-                  "    pm.expect(responseJson.content).to.eql('This is a reply to the comment.');",
+                  "    pm.expect(responseJson.body).to.eql('This is a reply to the comment.');",
                   "    pm.expect(responseJson.parent_id).to.eql(pm.environment.get(\"comment_id\"));",
                   "});",
                   "",

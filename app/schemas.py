@@ -115,7 +115,7 @@ class PostCreateRequest(BaseModel):
     This schema is used to parse the request body for post creation.
     It contains the required and optional fields for creating a new blog post."""
     title: str
-    content: str
+    body: str
     categories: Optional[List[int]] = None
     is_published: Optional[bool] = True
 
@@ -126,7 +126,7 @@ class PostResponse(BaseModel):
     It contains all fields that are returned in the response for a blog post."""
     id: str
     title: str
-    content: str
+    body: str
     author_id: str
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -142,7 +142,7 @@ class PostUpdateRequest(BaseModel):
     This schema is used to parse the request body for post updates.
     It contains optional fields that can be updated for an existing post."""
     title: Optional[str] = None
-    content: Optional[str] = None
+    body: Optional[str] = None
     categories: Optional[List[int]] = None
     is_published: Optional[bool] = None
 
@@ -151,14 +151,14 @@ class CommentCreateRequest(BaseModel):
     """Schema for creating a new comment.
     
     This schema is used to parse the request body for comment creation.
-    It contains the required content field and optional parent_id for nested comments.
+    It contains the required body field and optional parent_id for nested comments.
     
     The assumption is made that the post_id is passed in the URL path and not in the request body.
     
     TODO: Add a field for comment type (e.g., text, image, video).
     TODO: Add a field for comment status (e.g., approved, spam, deleted).
-    TODO: Add validation rules for comment content length and format."""
-    content: str
+    TODO: Add validation rules for comment body length and format."""
+    body: str
     parent_id: Optional[str] = None
 
 class CommentResponse(BaseModel):
@@ -169,7 +169,7 @@ class CommentResponse(BaseModel):
     id: str
     post_id: str
     author_id: str
-    content: str
+    body: str
     parent_id: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -187,7 +187,7 @@ class CommentUpdateRequest(BaseModel):
     
     This schema is used to parse the request body for comment updates.
     It contains optional fields that can be updated for an existing comment."""
-    content: Optional[str] = None
+    body: Optional[str] = None
     parent_id: Optional[str] = None
     is_published: Optional[bool] = None
     # is_edited: Optional[bool] = None
@@ -237,7 +237,7 @@ class SearchItem(BaseModel):
     type: str  # "post" or "comment"
     created_at: datetime
     updated_at: Optional[datetime] = None
-    content_preview: str
+    body_preview: str
     author_id: str
     
     class Config:

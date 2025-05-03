@@ -4,8 +4,8 @@
 
 ### `POST /api/v1/auth/register`
 - Creates a new user account
-- **Request Body**: `{ "email": string, "email": string, "password": string }`
-- **Response**: `{ "id": int, "email": string, "email": string, "role": string }`
+- **Request Body**: `{ "email": string, "password": string }`
+- **Response**: `{ "id": int, "email": string, "role": string }`
 
 ### `POST /api/v1/auth/login`
 - Authenticates a user and returns JWT tokens
@@ -26,7 +26,7 @@
 
 ### `GET /api/v1/users/me`
 - Returns the current authenticated user's profile
-- **Response**: `{ "id": int, "email": string, "email": string, "role": string, "created_at": datetime }`
+- **Response**: `{ "id": int, "email": string, "role": string, "created_at": datetime }`
 
 ### `GET /api/v1/users/{user_id}`
 - Returns a specific user's public profile
@@ -34,8 +34,8 @@
 
 ### `PUT /api/v1/users/me`
 - Updates the current user's profile
-- **Request Body**: `{ "email": string, "email": string, "password": string }`
-- **Response**: `{ "id": int, "email": string, "email": string, "role": string }`
+- **Request Body**: `{ "email": string, "password": string }`
+- **Response**: `{ "id": int, "email": string, "role": string }`
 
 ### `GET /api/v1/users/{user_id}/posts`
 - Returns all posts by a specific user
@@ -81,12 +81,12 @@
 
 ### `POST /api/v1/posts/{post_id}/comments`
 - Creates a new comment on a post (requires authentication)
-- **Request Body**: `{ "content": string, "parent_id": int (optional) }`
+- **Request Body**: `{ "body": string, "parent_id": int (optional) }`
 - **Response**: Created comment object
 
 ### `PUT /api/v1/comments/{comment_id}`
 - Updates an existing comment (requires authentication and ownership)
-- **Request Body**: `{ "content": string }`
+- **Request Body**: `{ "body": string }`
 - **Response**: Updated comment object
 
 ### `DELETE /api/v1/comments/{comment_id}`

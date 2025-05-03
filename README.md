@@ -100,10 +100,10 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 
 ### Comments
 - GET /api/v1/posts/{post_id}/comments — Get comments for a post
-- POST /api/v1/posts/{post_id}/comments — Create a comment on a post
-- PUT /api/v1/comments/{comment_id} — Update a comment (requires ownership)
+- POST /api/v1/posts/{post_id}/comments — Create a comment on a post (use `body` for comment text)
+- PUT /api/v1/comments/{comment_id} — Update a comment (use `body` for comment text, requires ownership)
 - DELETE /api/v1/comments/{comment_id} — Delete a comment (requires ownership)
-- POST /api/v1/comments/{comment_id}/replies — Create a reply to a comment
+- POST /api/v1/comments/{comment_id}/replies — Create a reply to a comment (use `body` for reply text)
 
 ### Search
 - GET /api/v1/search — Search posts and content with advanced filtering options
@@ -137,10 +137,15 @@ curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:8000/users/me
 curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:8000/admin/users
 
 # Create a new blog post
-curl -X POST -H "Content-Type: application/json" -d '{"title": "New Blog Post", "content": "This is the content of the new blog post."}' -H "Authorization: Bearer $TOKEN" http://localhost:8000/posts
+curl -X POST -H "Content-Type: application/json" -d '{"title": "New Blog Post", "body": "This is the body of the new blog post."}' -H "Authorization: Bearer $TOKEN" http://localhost:8000/posts
 
 # List all posts
 curl -X GET http://localhost:8000/posts
+
+# Create a comment on a post
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"body": "This is a comment on the post."}' \
+  http://localhost:8000/api/v1/posts/{post_id}/comments
 ```
 
 ### API Documentation

@@ -6,7 +6,7 @@ Here is a detailed plan for implementing a comments feature in your Python blog 
 - Consult `database-schema.mermaid` for how comments might fit into your data model.
 
 2. Data Model Design
-- Extend `models.py` to add a CommentModel with fields such as id, post_id, author_id, content, created_at, updated_at, parent_comment_id (for threading), is_approved, is_deleted.
+- Extend `models.py` to add a CommentModel with fields such as id, post_id, author_id, body, created_at, updated_at, parent_comment_id (for threading), is_approved, is_deleted.
 - Update `database-schema.mermaid` to reflect the new comments collection/table and its relationships.
 
 3. Schemas

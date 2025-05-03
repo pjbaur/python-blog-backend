@@ -208,7 +208,7 @@ def mock_post_data():
     return {
         "_id": ObjectId("60d21b4667d0d8992e610c86"),
         "title": "Test Post",
-        "content": "This is a test post content.",
+        "body": "This is a test post body.",
         "author_id": "60d21b4667d0d8992e610c85",
         "created_at": datetime.utcnow()
     }
@@ -229,7 +229,7 @@ class TestPostCRUD:
         mock_posts_collection.insert_one.assert_called_once()
         assert result.id == str(mock_post_data["_id"])
         assert result.title == mock_post_data["title"]
-        assert result.content == mock_post_data["content"]
+        assert result.body == mock_post_data["body"]
 
     def test_get_post_by_id(self, mock_posts_collection, mock_post_data):
         # Setup
@@ -243,7 +243,7 @@ class TestPostCRUD:
         mock_posts_collection.find_one.assert_called_once_with({"_id": ObjectId(post_id)})
         assert result.id == post_id
         assert result.title == mock_post_data["title"]
-        assert result.content == mock_post_data["content"]
+        assert result.body == mock_post_data["body"]
 
     def test_get_post_by_id_not_found(self, mock_posts_collection):
         # Setup

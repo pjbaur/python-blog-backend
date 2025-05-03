@@ -28,7 +28,7 @@ async def create_post(
     # Create a new post model
     post = PostModel(
         title=post_data.title,
-        content=post_data.content,
+        body=post_data.body,
         author_id=str(current_user.id),
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
@@ -102,8 +102,8 @@ async def update_post(
     
     if post_data.title is not None:
         updates["title"] = post_data.title
-    if post_data.content is not None:
-        updates["content"] = post_data.content
+    if post_data.body is not None:
+        updates["body"] = post_data.body
     if post_data.categories is not None:
         updates["categories"] = post_data.categories
     if post_data.is_published is not None:
@@ -299,7 +299,7 @@ async def create_post_comment(
     comment = CommentModel(
         post_id=post_id,
         author_id=str(current_user.id),
-        content=comment_data.content,
+        body=comment_data.body,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
         parent_id=comment_data.parent_id,

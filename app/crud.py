@@ -594,8 +594,8 @@ def search_posts_v2(query: str, limit: int = 10, skip: int = 0, sort_by: str = "
         # Convert results to PostModel objects
         for post_data in cursor:
             post = PostModel(**post_data)
-            # Calculate a content preview from the post content
-            post.content_preview = post.content[:200] + "..." if len(post.content) > 200 else post.content
+            # Calculate a body preview from the post body
+            post.body_preview = post.body[:200] + "..." if len(post.body) > 200 else post.body
             posts.append(post)
             
         logger.info(f"Found {len(posts)} posts matching search query")
@@ -644,8 +644,8 @@ def search_comments(query: str, limit: int = 10, skip: int = 0, sort_by: str = "
         # Convert results to CommentModel objects
         for comment_data in cursor:
             comment = CommentModel(**comment_data)
-            # Calculate a content preview from the comment content
-            comment.content_preview = comment.content[:200] + "..." if len(comment.content) > 200 else comment.content
+            # Calculate a body preview from the comment body
+            comment.body_preview = comment.body[:200] + "..." if len(comment.body) > 200 else comment.body
             comments.append(comment)
             
         logger.info(f"Found {len(comments)} comments matching search query")
@@ -666,12 +666,12 @@ def setup_search_indexes():
         # Create text index for posts collection
         posts_collection.create_index([
             ("title", "text"), 
-            ("content", "text")
+            ("body", "text")
         ], name="post_text_search")
         
         # Create text index for comments collection
         comments_collection.create_index([
-            ("content", "text")
+            ("body", "text")
         ], name="comment_text_search")
         
         logger.info("Successfully created text indexes for search functionality")

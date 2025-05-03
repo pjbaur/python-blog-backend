@@ -51,7 +51,7 @@ def test_create_post(mock_user):
     
     test_post = {
         "title": "Test Post", 
-        "content": "Test Content",
+        "body": "Test body",
         "categories": [1, 2],
         "is_published": True
     }
@@ -95,7 +95,7 @@ def create_test_post(mock_user):
     # Create a test post with full schema
     test_post = {
         "title": "Test Post for Reading", 
-        "content": "This is content for testing read operations",
+        "body": "This is body for testing read operations",
         "categories": [],
         "is_published": True
     }
@@ -162,7 +162,7 @@ def test_read_single_post(create_test_post):
     data = response.json()
     assert data["id"] == post_id
     assert "title" in data
-    assert "content" in data
+    assert "body" in data
     assert "author_id" in data
     assert data["author_id"] == create_test_post["author_id"]
 
@@ -173,7 +173,7 @@ def test_update_post(create_test_post):
     
     updated_data = {
         "title": "Updated Test Post Title",
-        "content": "This content has been updated for testing",
+        "body": "This body has been updated for testing",
         "categories": [3, 4],
         "is_published": False
     }
@@ -188,13 +188,13 @@ def test_update_post(create_test_post):
     data = response.json()
     assert data["id"] == post_id
     assert data["title"] == updated_data["title"]
-    assert data["content"] == updated_data["content"]
+    assert data["body"] == updated_data["body"]
     
     # Verify the post was actually updated in the database
     from app.database import db
     updated_post = db['posts'].find_one({"_id": ObjectId(post_id)})
     assert updated_post["title"] == updated_data["title"]
-    assert updated_post["content"] == updated_data["content"]
+    assert updated_post["body"] == updated_data["body"]
 
 def test_delete_post(create_test_post):
     """Test deleting a post"""
@@ -222,12 +222,12 @@ def test_unauthenticated_get_posts():
 def test_unauthorized_post_operations():
     """Test that unauthorized users cannot perform post operations"""
     # Try to create a post without a token
-    test_post = {"title": "Unauthorized Post", "content": "This should not be created"}
+    test_post = {"title": "Unauthorized Post", "body": "This should not be created"}
     response = client.post("/api/v1/posts", json=test_post)
     assert response.status_code == 401
     
     # Try to create a post with an invalid token test
-    test_post = {"title": "Unauthorized Post", "content": "This should not be created"}
+    test_post = {"title": "Unauthorized Post", "body": "This should not be created"}
     invalid_token = "invalid.token.here"
     response = client.post(
         "/api/v1/posts",

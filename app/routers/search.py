@@ -74,7 +74,7 @@ async def search(
                     id=post.id,
                     type="post",
                     title=post.title,
-                    content_preview=getattr(post, 'content_preview', post.content[:200] + "..." if len(post.content) > 200 else post.content),
+                    body_preview=getattr(post, 'body_preview', post.body[:200] + "..." if len(post.body) > 200 else post.body),
                     author_id=post.author_id,
                     created_at=post.created_at,
                     updated_at=post.updated_at,
@@ -115,7 +115,7 @@ async def search(
                 search_item = schemas.SearchCommentResult(
                     id=comment.id,
                     type="comment",
-                    content_preview=getattr(comment, 'content_preview', comment.content[:200] + "..." if len(comment.content) > 200 else comment.content),
+                    body_preview=getattr(comment, 'body_preview', comment.body[:200] + "..." if len(comment.body) > 200 else comment.body),
                     author_id=comment.author_id,
                     created_at=comment.created_at,
                     updated_at=comment.updated_at,

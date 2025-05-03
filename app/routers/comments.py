@@ -54,8 +54,8 @@ async def update_comment(
     updates = {}
     updates["updated_at"] = datetime.now(timezone.utc)
     
-    if comment_data.content is not None:
-        updates["content"] = comment_data.content
+    if comment_data.body is not None:
+        updates["body"] = comment_data.body
     
     # Optional fields
     if comment_data.is_published is not None:
@@ -118,7 +118,7 @@ async def create_comment_reply(
     
     # Create a new comment model with parent_id
     comment = CommentModel(
-        content=comment_data.content,
+        body=comment_data.body,
         post_id=parent_comment.post_id,  # Use the same post_id as parent
         author_id=str(current_user.id),
         created_at=datetime.now(timezone.utc),

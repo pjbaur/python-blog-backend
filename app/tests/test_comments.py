@@ -29,7 +29,7 @@ def create_test_post_with_comment(mock_user):
     # Create a test post
     test_post = {
         "title": "Test Post for Comments", 
-        "content": "This is a post for testing comments",
+        "body": "This is a post for testing comments",
         "categories": [],
         "is_published": True
     }
@@ -47,7 +47,7 @@ def create_test_post_with_comment(mock_user):
     
     # Create a test comment on the post
     test_comment = {
-        "content": "This is a test comment"
+        "body": "This is a test comment"
     }
     
     comment_response = client.post(
@@ -86,7 +86,7 @@ def create_test_post_with_nested_comments(mock_user):
     # Create a test post
     test_post = {
         "title": "Test Post for Nested Comments", 
-        "content": "This is a post for testing nested comments",
+        "body": "This is a post for testing nested comments",
         "categories": [],
         "is_published": True
     }
@@ -102,7 +102,7 @@ def create_test_post_with_nested_comments(mock_user):
     
     # Create a parent comment
     parent_comment = {
-        "content": "This is a parent comment"
+        "body": "This is a parent comment"
     }
     
     parent_response = client.post(
@@ -116,7 +116,7 @@ def create_test_post_with_nested_comments(mock_user):
     
     # Create a child comment
     child_comment = {
-        "content": "This is a child comment",
+        "body": "This is a child comment",
         "parent_id": parent_id
     }
     
@@ -156,7 +156,7 @@ def test_create_comment_crud():
     post_data = {
         "_id": ObjectId(post_id),
         "title": "Test Post for Comment CRUD",
-        "content": "This is a post for testing comment CRUD",
+        "body": "This is a post for testing comment CRUD",
         "author_id": author_id,
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
@@ -170,7 +170,7 @@ def test_create_comment_crud():
     comment = CommentModel(
         post_id=post_id,
         author_id=author_id,
-        content="Test comment for CRUD testing",
+        body="Test comment for CRUD testing",
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
         is_published=True
@@ -182,7 +182,7 @@ def test_create_comment_crud():
     # Verify comment was added to the comments collection
     saved_comment = db['comments'].find_one({"post_id": post_id})
     assert saved_comment is not None
-    assert saved_comment["content"] == comment.content
+    assert saved_comment["body"] == comment.body
     assert saved_comment["author_id"] == author_id
     
     # Clean up
@@ -202,7 +202,7 @@ def test_get_comments_for_post_crud():
     post_data = {
         "_id": ObjectId(post_id),
         "title": "Test Post for Comment CRUD",
-        "content": "This is a post for testing comment CRUD",
+        "body": "This is a post for testing comment CRUD",
         "author_id": author_id,
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
@@ -216,7 +216,7 @@ def test_get_comments_for_post_crud():
     comment1 = {
         "post_id": post_id,
         "author_id": author_id,
-        "content": "Test comment 1",
+        "body": "Test comment 1",
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "is_published": True
@@ -225,7 +225,7 @@ def test_get_comments_for_post_crud():
     comment2 = {
         "post_id": post_id,
         "author_id": author_id,
-        "content": "Test comment 2",
+        "body": "Test comment 2",
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "is_published": True
@@ -240,9 +240,9 @@ def test_get_comments_for_post_crud():
     # Verify comments were retrieved
     assert comments is not None
     assert len(comments) == 2
-    comment_contents = [c.content for c in comments]
-    assert "Test comment 1" in comment_contents
-    assert "Test comment 2" in comment_contents
+    comment_bodies = [c.body for c in comments]
+    assert "Test comment 1" in comment_bodies
+    assert "Test comment 2" in comment_bodies
     
     # Clean up
     db['posts'].delete_one({"_id": ObjectId(post_id)})
@@ -261,7 +261,7 @@ def test_update_comment_crud():
     post_data = {
         "_id": ObjectId(post_id),
         "title": "Test Post for Comment CRUD",
-        "content": "This is a post for testing comment CRUD",
+        "body": "This is a post for testing comment CRUD",
         "author_id": author_id,
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
@@ -275,7 +275,7 @@ def test_update_comment_crud():
     comment_data = {
         "post_id": post_id,
         "author_id": author_id,
-        "content": "Original comment content",
+        "body": "Original comment body",
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "is_published": True
@@ -284,15 +284,15 @@ def test_update_comment_crud():
     comment_id = db['comments'].insert_one(comment_data).inserted_id
     
     # Updated comment data
-    updated_content = "Updated comment content"
+    updated_body = "Updated comment body"
     
     # Use CRUD function to update comment
-    result = crud.update_comment_v2(str(comment_id), {"content": updated_content})
+    result = crud.update_comment_v2(str(comment_id), {"body": updated_body})
     
     # Verify comment was updated
     updated_comment = db['comments'].find_one({"_id": comment_id})
     assert updated_comment is not None
-    assert updated_comment["content"] == updated_content
+    assert updated_comment["body"] == updated_body
     
     # Clean up
     db['posts'].delete_one({"_id": ObjectId(post_id)})
@@ -310,7 +310,7 @@ def test_delete_comment_crud():
     post_data = {
         "_id": ObjectId(post_id),
         "title": "Test Post for Comment CRUD",
-        "content": "This is a post for testing comment CRUD",
+        "body": "This is a post for testing comment CRUD",
         "author_id": author_id,
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
@@ -324,7 +324,7 @@ def test_delete_comment_crud():
     comment_data = {
         "post_id": post_id,
         "author_id": author_id,
-        "content": "Comment to be deleted",
+        "body": "Comment to be deleted",
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "is_published": True
@@ -360,7 +360,7 @@ def test_get_post_comments_api(create_test_post_with_comment):
     assert isinstance(data, list)
     assert len(data) == 1
     assert data[0]["post_id"] == post_id
-    assert data[0]["content"] == "This is a test comment"
+    assert data[0]["body"] == "This is a test comment"
     assert "id" in data[0]
     assert "author_id" in data[0]
     assert "created_at" in data[0]
@@ -371,7 +371,7 @@ def test_create_post_comment_api(create_test_post_with_comment):
     token = create_test_post_with_comment["token"]
     
     test_comment = {
-        "content": "This is another test comment"
+        "body": "This is another test comment"
     }
     
     response = client.post(
@@ -384,7 +384,7 @@ def test_create_post_comment_api(create_test_post_with_comment):
     
     data = response.json()
     assert data["post_id"] == post_id
-    assert data["content"] == test_comment["content"]
+    assert data["body"] == test_comment["body"]
     assert "id" in data
     assert "author_id" in data
     assert "created_at" in data
@@ -409,7 +409,7 @@ def test_create_nested_comment_api(create_test_post_with_comment):
     
     # Create a child comment
     test_child_comment = {
-        "content": "This is a reply to the original comment",
+        "body": "This is a reply to the original comment",
         "parent_id": parent_id
     }
     
@@ -423,7 +423,7 @@ def test_create_nested_comment_api(create_test_post_with_comment):
     
     data = response.json()
     assert data["post_id"] == post_id
-    assert data["content"] == test_child_comment["content"]
+    assert data["body"] == test_child_comment["body"]
     assert data["parent_id"] == parent_id
     assert "id" in data
     assert "author_id" in data
@@ -487,7 +487,7 @@ def test_create_comment_nonexistent_post_api(mock_user):
     non_existent_id = str(ObjectId())
     
     test_comment = {
-        "content": "This comment should not be created"
+        "body": "This comment should not be created"
     }
     
     response = client.post(
@@ -507,7 +507,7 @@ def test_create_comment_with_nonexistent_parent_api(create_test_post_with_commen
     non_existent_parent_id = str(ObjectId())
     
     test_comment = {
-        "content": "This comment should not be created",
+        "body": "This comment should not be created",
         "parent_id": non_existent_parent_id
     }
     
@@ -525,7 +525,7 @@ def test_unauthorized_comment_creation_api(create_test_post_with_comment):
     post_id = create_test_post_with_comment["post_id"]
     
     test_comment = {
-        "content": "This comment should not be created without authorization"
+        "body": "This comment should not be created without authorization"
     }
     
     # Attempt to create a comment without a token
@@ -562,7 +562,7 @@ def test_get_comment_by_id_api(create_test_post_with_comment):
     
     data = response.json()
     assert data["id"] == comment_id
-    assert data["content"] == "This is a test comment"
+    assert data["body"] == "This is a test comment"
     assert "author_id" in data
     assert "created_at" in data
 
@@ -585,7 +585,7 @@ def test_update_comment_api(create_test_post_with_comment):
     author_id = create_test_post_with_comment["author_id"]
     
     updated_comment_data = {
-        "content": "This comment has been updated"
+        "body": "This comment has been updated"
     }
     
     response = client.put(
@@ -598,7 +598,7 @@ def test_update_comment_api(create_test_post_with_comment):
     
     data = response.json()
     assert data["id"] == comment_id
-    assert data["content"] == updated_comment_data["content"]
+    assert data["body"] == updated_comment_data["body"]
     assert data["author_id"] == author_id
     assert "updated_at" in data
 
@@ -608,7 +608,7 @@ def test_update_comment_with_publishing_status_api(create_test_post_with_comment
     token = create_test_post_with_comment["token"]
     
     updated_comment_data = {
-        "content": "This comment has been updated and unpublished",
+        "body": "This comment has been updated and unpublished",
         "is_published": False
     }
     
@@ -622,7 +622,7 @@ def test_update_comment_with_publishing_status_api(create_test_post_with_comment
     
     data = response.json()
     assert data["id"] == comment_id
-    assert data["content"] == updated_comment_data["content"]
+    assert data["body"] == updated_comment_data["body"]
     assert data["is_published"] == False
     
     # Reset the published status for other tests
@@ -647,7 +647,7 @@ def test_update_nonexistent_comment_api(mock_user):
     non_existent_id = str(ObjectId())
     
     updated_comment_data = {
-        "content": "This update should fail"
+        "body": "This update should fail"
     }
     
     response = client.put(
@@ -671,7 +671,7 @@ def test_update_comment_unauthorized_api(create_test_post_with_comment, mock_use
     assert different_user_id != create_test_post_with_comment["author_id"]
     
     updated_comment_data = {
-        "content": "This update should be unauthorized"
+        "body": "This update should be unauthorized"
     }
     
     response = client.put(
@@ -706,7 +706,7 @@ def test_admin_update_any_comment_api(create_test_post_with_comment):
     )
     
     updated_comment_data = {
-        "content": "This comment was updated by an admin"
+        "body": "This comment was updated by an admin"
     }
     
     response = client.put(
@@ -718,7 +718,7 @@ def test_admin_update_any_comment_api(create_test_post_with_comment):
     assert response.status_code == 200
     
     data = response.json()
-    assert data["content"] == updated_comment_data["content"]
+    assert data["body"] == updated_comment_data["body"]
     
     # Clean up admin user
     db['users'].delete_one({"_id": ObjectId(admin_id)})
@@ -730,7 +730,7 @@ def test_delete_comment_api(create_test_post_with_comment):
     
     # Create a new comment to delete (so we don't affect other tests)
     test_comment = {
-        "content": "This comment will be deleted"
+        "body": "This comment will be deleted"
     }
     
     create_response = client.post(
@@ -805,7 +805,7 @@ def test_admin_delete_any_comment_api(create_test_post_with_comment):
     
     # Create a comment for the admin to delete
     test_comment = {
-        "content": "This comment will be deleted by an admin"
+        "body": "This comment will be deleted by an admin"
     }
     
     create_response = client.post(
@@ -852,7 +852,7 @@ def test_create_comment_reply_api(create_test_post_with_comment):
     token = create_test_post_with_comment["token"]
     
     reply_data = {
-        "content": "This is a reply to another comment"
+        "body": "This is a reply to another comment"
     }
     
     response = client.post(
@@ -864,7 +864,7 @@ def test_create_comment_reply_api(create_test_post_with_comment):
     assert response.status_code == 201
     
     data = response.json()
-    assert data["content"] == reply_data["content"]
+    assert data["body"] == reply_data["body"]
     assert data["parent_id"] == comment_id
     assert "id" in data
     assert "author_id" in data
@@ -888,7 +888,7 @@ def test_create_reply_nonexistent_comment_api(mock_user):
     non_existent_id = str(ObjectId())
     
     reply_data = {
-        "content": "This reply should not be created"
+        "body": "This reply should not be created"
     }
     
     response = client.post(
