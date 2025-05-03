@@ -159,6 +159,18 @@ When the application is running, you can access:
 - Improve CRUD testing
 - Improve auth testing
 
+- DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+- PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+
+- /Users/paulbaur/projects/python-blog-backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:345: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+
+- /Users/paulbaur/projects/python-blog-backend/app/crud.py:96: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+
+- datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version.
+
 ## Project Structure
 ```
 python-blog-backend/
@@ -337,7 +349,7 @@ Images can be stored either in the local filesystem or in S3-compatible cloud st
 - **Dependencies**: External service dependency
 - **Setup**: Requires S3-compatible service configuration
 
-The application supports both local and S3 storage options, allowing flexibility depending on deployment needs. Local storage works well for development and testing, while S3 is recommended for production deployments.
+The application supports both local and S3 storage options, allowing flexibility depending on deployment needs. Local storage works well for development and testing, while S3 is recommended for production deployments. **I was storing images locally. Then I moved them to S3. TODO: It would be nice to configure to either.**
 
 ### Error Handling Strategy
 
