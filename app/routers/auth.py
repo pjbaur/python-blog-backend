@@ -104,6 +104,39 @@ def refresh_token(refresh_data: schemas.RefreshTokenRequest):
     logger.info(f"Token refreshed successfully for user ID: {user_id}")
     return {"access_token": new_access_token, "token_type": "bearer"}
 
+# Implement verify token endpoint
+@router.post("/verify-token", response_model=schemas.TokenVerifyResponse)
+def verify_token(verify_data: schemas.TokenVerifyRequest):
+    """ Verify token endpoint.
+    
+    This endpoint verifies if the provided token is still valid.
+    It returns information about the token's validity, user ID, token type, and expiration.
+    """
+    logger.info("Token verification requested")
+    
+    # Extract token from request
+    token = verify_data.token
+    
+    # Verify the token without specifying a type to allow either access or refresh tokens
+    payload = auth.verify_token(token)
+    
+    if not payload:
+        logger.warning("Token validation failed")
+        return {"is_valid": False}
+    
+    # Extract token information
+    user_id = payload.get("id")
+    token_type = payload.get("token_type")
+    expires_at = datetime.fromtimestamp(payload.get("exp"), tz=timezone.utc)
+    
+    logger.info(f"Token verified successfully for user ID: {user_id}")
+    return {
+        "is_valid": True,
+        "user_id": user_id,
+        "token_type": token_type,
+        "expires_at": expires_at
+    }
+
 # Implement logout endpoint
 @router.post("/logout", status_code=204)
 def logout_user(logout_data: schemas.LogoutRequest):
@@ -141,3 +174,4 @@ def logout_user(logout_data: schemas.LogoutRequest):
     
     logger.info(f"User logged out successfully, ID: {payload.get('id')}")
     return None
+

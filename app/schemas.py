@@ -108,6 +108,26 @@ class LogoutRequest(BaseModel):
     refresh_token: str
     access_token: Optional[str] = None
 
+class TokenVerifyRequest(BaseModel):
+    """Schema for token verification.
+    
+    This schema is used to parse the request body for token verification.
+    It contains the token to be verified."""
+    token: str
+
+class TokenVerifyResponse(BaseModel):
+    """Schema for token verification response.
+    
+    This schema is used to format the response body for token verification.
+    It contains information about the token's validity and the user ID if valid."""
+    is_valid: bool
+    user_id: Optional[str] = None
+    token_type: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    
+    class Config:
+        orm_mode = True
+
 # Post Schemas
 class PostCreateRequest(BaseModel):
     """Schema for creating a new blog post.
