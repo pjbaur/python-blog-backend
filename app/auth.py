@@ -200,10 +200,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return UserModel(**user_data)
 
 def is_jwt_token(token: str) -> bool:
-    """Check if the token is a JWT token."""
+    """Check if the token is a JWT token.
+    
+    This function only checks if the token has valid JWT format,
+    not if it contains the expected payload fields.
+    """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return "id" in payload
+        # Just decode the token to check format, don't verify contents
+        jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return True
     except PyJWTError:
         return False
     except Exception as e:
