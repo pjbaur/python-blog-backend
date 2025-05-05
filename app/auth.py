@@ -198,3 +198,41 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     
     logger.debug(f"User authenticated via token: {user_data.get('email')}")
     return UserModel(**user_data)
+
+def is_jwt_token(token: str) -> bool:
+    """Check if the token is a JWT token."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return "id" in payload
+    except PyJWTError:
+        return False
+    except Exception as e:
+        logger.warning(f"Error checking if token is JWT: {str(e)}")
+        return False
+
+def is_token_expired(token: str) -> bool:
+    """Check if a token is expired.
+    
+    Returns:
+        bool: True if the token is expired or invalid, False if it is still valid.
+    """
+    try:
+        # Decode the token without verification to get expiry time
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        exp_timestamp = payload.get("exp")
+        if not exp_timestamp:
+            logger.warning("Token has no expiry date")
+            return True
+            
+        # Check if token has expired
+        exp_datetime = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+        now = datetime.now(timezone.utc)
+        
+        logger.debug(f"Token expiry: {exp_datetime}, Current time: {now}")
+        return now >= exp_datetime
+    except PyJWTError as e:
+        logger.warning(f"Token expiry check failed: {str(e)}")
+        return True
+    except Exception as e:
+        logger.warning(f"Error checking token expiry: {str(e)}")
+        return True

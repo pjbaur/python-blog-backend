@@ -352,13 +352,9 @@ class TestVerifyToken:
             json={"token": invalid_token}
         )
         
-        # Check that the response indicates an invalid token
-        assert response.status_code == 200
-        data = response.json()
-        assert data["is_valid"] == False
-        assert "user_id" not in data
-        assert "token_type" not in data
-        assert "expires_at" not in data
+        # Check that the response indicates an invalid token format with 400 status code
+        assert response.status_code == 400
+        assert "Invalid token format" in response.json()["detail"]
 
     def test_verify_expired_token(self, mock_user):
         """Test that verify token endpoint correctly identifies an expired token"""

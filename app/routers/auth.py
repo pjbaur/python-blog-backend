@@ -105,7 +105,7 @@ def refresh_token(refresh_data: schemas.RefreshTokenRequest):
     return {"access_token": new_access_token, "token_type": "bearer"}
 
 # Implement verify token endpoint
-@router.post("/verify-token", response_model=schemas.TokenVerifyResponse)
+@router.post("/verify-token")
 def verify_token(verify_data: schemas.TokenVerifyRequest):
     """ Verify token endpoint.
     
@@ -116,13 +116,28 @@ def verify_token(verify_data: schemas.TokenVerifyRequest):
     
     # Extract token from request
     token = verify_data.token
+    logger.debug(f"Token to verify: {token}")
+    if not token:
+        logger.warning("No token provided for verification")
+        # Return invalid token response instead of raising an error
+        return schemas.InvalidTokenResponse()
+        
+    # Check if the token is a valid JWT
+    if not auth.is_jwt_token(token):
+        logger.warning("Invalid token format")
+        raise HTTPException(status_code=400, detail="Invalid token format")
+    # Check if the token is expired
+    if auth.is_token_expired(token):
+        logger.warning("Token is expired")
+        return schemas.InvalidTokenResponse()
     
     # Verify the token without specifying a type to allow either access or refresh tokens
     payload = auth.verify_token(token)
-    
+    logger.debug(f"Token payload: {payload}")
+
     if not payload:
         logger.warning("Token validation failed")
-        return {"is_valid": False}
+        return schemas.InvalidTokenResponse()
     
     # Extract token information
     user_id = payload.get("id")
@@ -130,12 +145,12 @@ def verify_token(verify_data: schemas.TokenVerifyRequest):
     expires_at = datetime.fromtimestamp(payload.get("exp"), tz=timezone.utc)
     
     logger.info(f"Token verified successfully for user ID: {user_id}")
-    return {
-        "is_valid": True,
-        "user_id": user_id,
-        "token_type": token_type,
-        "expires_at": expires_at
-    }
+    return schemas.TokenVerifyResponse(
+        is_valid=True,
+        user_id=user_id,
+        token_type=token_type,
+        expires_at=expires_at
+    )
 
 # Implement logout endpoint
 @router.post("/logout", status_code=204)

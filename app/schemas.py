@@ -128,6 +128,15 @@ class TokenVerifyResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class InvalidTokenResponse(BaseModel):
+    """Schema for invalid token response.
+    
+    This schema is used when a token is invalid, ensuring no extra fields are returned."""
+    is_valid: bool = False
+    
+    class Config:
+        orm_mode = True
+
 # Post Schemas
 class PostCreateRequest(BaseModel):
     """Schema for creating a new blog post.
