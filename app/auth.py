@@ -206,8 +206,8 @@ def is_jwt_token(token: str) -> bool:
     not if it contains the expected payload fields.
     """
     try:
-        # Just decode the token to check format, don't verify contents
-        jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Just decode the token to check format, don't verify contents or expiration
+        jwt.decode(token, options={"verify_signature": False, "verify_exp": False}, algorithms=[ALGORITHM])
         return True
     except PyJWTError:
         return False
@@ -223,7 +223,7 @@ def is_token_expired(token: str) -> bool:
     """
     try:
         # Decode the token without verification to get expiry time
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, options={"verify_signature": False}, algorithms=[ALGORITHM])
         exp_timestamp = payload.get("exp")
         if not exp_timestamp:
             logger.warning("Token has no expiry date")
