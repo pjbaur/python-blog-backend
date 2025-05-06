@@ -102,6 +102,12 @@
 - Creates a reply to a comment
 - **Response**: Created comment object
 
+## Admin Endpoints
+
+### `GET /api/v1/admin/users`
+- Lists all users
+- **Response**: Array of User objects
+
 ## Category Endpoints
 
 ### `GET /api/v1/categories`

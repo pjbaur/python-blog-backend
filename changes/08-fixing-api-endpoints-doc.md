@@ -7,22 +7,22 @@ The api-endpoints.md file is thorough and well-structured, but it is not fully c
 
 **Issues and Gaps:**
 1. **FIXED** **Duplicate Fields:** There are copy-paste errors in request/response bodies (e.g., `"email": string` appears twice in some places).
-2. **Missing Endpoints:** The documentation omits some endpoints present in the code and README, such as:
+2. **FIXED** **Missing Endpoints:** The documentation omits some endpoints present in the code and README, such as:
    - POST /api/v1/comments/{comment_id}/replies (for threaded replies)
      [X] Is this in README.md?
      [X] Is this in app/routers/comments.py?
      [X] Is this in app/tests/test_comments.py?
      [X] Is this in documentation/api-design/api-endpoints.md
    - POST /api/v1/auth/change-password (for password changes)
-     [ ] Where is this coded?
-     [ ] Is this in README.md?
-     [ ] Is this tested?
-     [ ] Is this in documentation/api-design/api-endpoints.md
+     [X] Where is this coded?
+     [X] Is this in README.md?
+     [X] Is this tested?
+     [X] Is this in documentation/api-design/api-endpoints.md
    - GET /api/v1/admin/users (admin-only user listing)
-     [ ] Where is this coded?
-     [ ] Is this in README.md?
-     [ ] Is this tested?
-     [ ] Is this in documentation/api-design/api-endpoints.md
+     [X] Where is this coded? app/routers/admin.py
+     [X] Is this in README.md?
+     [X] Is this tested?
+     [X] Is this in documentation/api-design/api-endpoints.md
 3. **FIXED** **Inconsistent Field Names:** Some endpoints use `"content"` for comments, while others use `"body"`. The implementation and OpenAPI specs often use `"body"`. **All comment endpoints and documentation should use `"body"` as the field name for comment text.**
 4. **Error Handling:** There is no section describing error response formats, status codes, or error handling conventions.
 5. **Role/Permission Details:** While some endpoints mention required roles, the documentation could be clearer about which endpoints require authentication or admin privileges.
