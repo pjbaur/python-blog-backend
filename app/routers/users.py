@@ -75,7 +75,12 @@ async def change_password(
     password_data: schemas.PasswordChangeRequest,
     current_user: UserModel = Depends(auth.get_current_user)
 ):
-    logger.info(f"Password change requested for user: {current_user.email}")
+    """Change the password for the current user.
+    This endpoint verifies the current password, checks for password reuse,
+    validates the new password, and updates the password in the database.
+    """
+    logger.info(f"Password change requested for user: {current_user}")
+    logger.debug(f"Password change data: {password_data}")
     
     # Verify current password
     if not auth.verify_password(password_data.current_password, current_user.hashed_password):

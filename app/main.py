@@ -12,6 +12,9 @@ from contextlib import asynccontextmanager
 load_dotenv()
 
 # Set up logging
+# logger = get_logger(__name__)
+# logger = None
+setup_logging()
 logger = get_logger(__name__)
 
 # Create initial admin user on startup if it doesn't exist
@@ -43,7 +46,8 @@ async def create_initial_admin():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialization code (before serving requests)
-    setup_logging()
+    # setup_logging()
+    # logger = get_logger(__name__)
     logger.info("Application startup: Initializing logging")
     await create_initial_admin()
     

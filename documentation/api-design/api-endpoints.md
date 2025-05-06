@@ -22,6 +22,11 @@
 - **Request Body**: `{ "refresh_token": string }`
 - **Response**: `{ "detail": "Successfully logged out" }`
 
+### `POST /api/v1/auth/change-password`
+- Updates current user's password in the database abd returns new tokens
+- **Request Body**: `{ "current_password": string, "new_password": string, "confirm_password": string}, {"id": string, "email": string, "hashed_password": string, "created_at": datetime, "updated_at": datetime, "is_active": boolean, "is_admin": boolean, "tokens": [string], "password_history": []}`
+- **Response**: `{ "access_token": string, "refresh_token": string, "token_type": "bearer" }`
+
 ## User Endpoints
 
 ### `GET /api/v1/users/me`
@@ -92,6 +97,10 @@
 ### `DELETE /api/v1/comments/{comment_id}`
 - Deletes a comment (requires authentication and ownership or ADMIN role)
 - **Response**: `{ "detail": "Comment successfully deleted" }`
+
+### `POST /api/v1/comments/{comment_id}/replies`
+- Creates a reply to a comment
+- **Response**: Created comment object
 
 ## Category Endpoints
 
