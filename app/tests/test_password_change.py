@@ -26,7 +26,7 @@ class TestPasswordChange:
         
         # Change password request
         response = client.post(
-            "/api/v1/users/me/change-password",
+            "/api/v1/auth/change-password",
             json={
                 "current_password": current_password,
                 "new_password": "newPassword-OrangeOverhead123",
@@ -73,7 +73,7 @@ class TestPasswordChange:
         
         # Change password request with incorrect current password
         response = client.post(
-            "/api/v1/users/me/change-password",
+            "/api/v1/auth/change-password",
             json={
                 "current_password": "wrongpassword",
                 "new_password": "newPassword-OrangeOverhead123",
@@ -92,7 +92,7 @@ class TestPasswordChange:
         
         # Change password request with mismatched new passwords
         response = client.post(
-            "/api/v1/users/me/change-password",
+            "/api/v1/auth/change-password",
             json={
                 "current_password": "testpassword",
                 "new_password": "newPassword-OrangeOverhead123",
@@ -109,7 +109,7 @@ class TestPasswordChange:
         """Test that password change fails when not authenticated"""
         # Change password request without auth token
         response = client.post(
-            "/api/v1/users/me/change-password",
+            "/api/v1/auth/change-password",
             json={
                 "current_password": "testpassword",
                 "new_password": "newPassword-OrangeOverhead123",
@@ -127,7 +127,7 @@ class TestPasswordChange:
         
         # Change password successfully
         response = client.post(
-            "/api/v1/users/me/change-password",
+            "/api/v1/auth/change-password",
             json={
                 "current_password": "testpassword",
                 "new_password": "newPassword-OrangeOverhead123",
@@ -153,7 +153,7 @@ class TestPasswordChange:
         
         # First password change - change to a new password
         first_change_response = client.post(
-            "/api/v1/users/me/change-password",
+            "/api/v1/auth/change-password",
             json={
                 "current_password": initial_password,
                 "new_password": "newPassword-OrangeOverhead123",
@@ -167,7 +167,7 @@ class TestPasswordChange:
         
         # Try to change back to the original password - should be rejected
         reuse_response = client.post(
-            "/api/v1/users/me/change-password",
+            "/api/v1/auth/change-password",
             json={
                 "current_password": "newPassword-OrangeOverhead123",
                 "new_password": initial_password,
