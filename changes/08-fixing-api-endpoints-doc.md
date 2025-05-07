@@ -25,7 +25,7 @@ The api-endpoints.md file is thorough and well-structured, but it is not fully c
      [X] Is this in documentation/api-design/api-endpoints.md
 3. **FIXED** **Inconsistent Field Names:** Some endpoints use `"content"` for comments, while others use `"body"`. The implementation and OpenAPI specs often use `"body"`. **All comment endpoints and documentation should use `"body"` as the field name for comment text.**
 4. **FIXED** **Error Handling:** There is no section describing error response formats, status codes, or error handling conventions.
-5. **Role/Permission Details:** While some endpoints mention required roles, the documentation could be clearer about which endpoints require authentication or admin privileges.
+5. **FIXED** **Role/Permission Details:** While some endpoints mention required roles, the documentation could be clearer about which endpoints require authentication or admin privileges.
 6. **Envelope and Metadata:** The structure for pagination metadata and response envelopes is not fully described.
 7. **Future/Planned Features:** Features like HATEOAS, rate limiting, and advanced filtering are not mentioned as planned or out of scope.
 8. **Consistency with OpenAPI:** The OpenAPI/Swagger spec (in all-documents-chatgpt.md and all-documents-deepseek.md) is more detailed and should be referenced or linked.
