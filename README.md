@@ -108,6 +108,129 @@ A RESTful API backend for a blog application built with FastAPI and MongoDB.
 ### Search
 - GET /api/v1/search — Search posts and content with advanced filtering options
 
+## API Error Handling
+
+This API follows standard HTTP status codes and provides consistent error response formats to help clients handle errors appropriately.
+
+### Error Response Format
+
+All error responses follow this JSON structure:
+
+```json
+{
+  "detail": "Human-readable error message",
+  "errors": ["Optional array of specific validation errors or additional details"]
+}
+```
+
+- The `detail` field is always present and contains a human-readable error message.
+- The `errors` field is optional and may contain additional error details, such as validation errors.
+
+### HTTP Status Codes
+
+The API uses the following standard HTTP status codes:
+
+| Status Code | Meaning | Common Scenarios |
+|-------------|---------|-----------------|
+| **2xx** | **Success** | |
+| 200 | OK | Successful GET, PUT, or POST when no resource is created |
+| 201 | Created | Successful resource creation via POST |
+| 204 | No Content | Successful DELETE |
+| **4xx** | **Client Errors** | |
+| 400 | Bad Request | Invalid request parameters or body |
+| 401 | Unauthorized | Missing or invalid authentication token |
+| 403 | Forbidden | Valid authentication but insufficient permissions |
+| 404 | Not Found | Resource not found |
+| 409 | Conflict | Resource already exists or state conflict |
+| 422 | Unprocessable Entity | Validation failure (e.g., password requirements) |
+| **5xx** | **Server Errors** | |
+| 500 | Internal Server Error | Unexpected server-side error |
+| 503 | Service Unavailable | Server temporarily unavailable |
+
+### Common Error Scenarios
+
+#### Authentication Errors
+
+```json
+// 401 Unauthorized - Missing or invalid token
+{
+  "detail": "Not authenticated"
+}
+
+// 401 Unauthorized - Invalid credentials during login
+{
+  "detail": "Incorrect email or password"
+}
+
+// 403 Forbidden - Insufficient permissions
+{
+  "detail": "Not authorized"
+}
+```
+
+#### Resource Errors
+
+```json
+// 404 Not Found - Resource doesn't exist
+{
+  "detail": "Post not found"
+}
+
+// 403 Forbidden - Operation not allowed on resource
+{
+  "detail": "You can only update your own posts"
+}
+```
+
+#### Validation Errors
+
+```json
+// 422 Unprocessable Entity - Password validation failed
+{
+  "detail": "Password validation failed",
+  "errors": [
+    "Password too short (minimum 8 characters)",
+    "Password too common"
+  ]
+}
+
+// 400 Bad Request - Email already in use
+{
+  "detail": "Email already registered"
+}
+```
+
+#### Server Errors
+
+```json
+// 500 Internal Server Error
+{
+  "detail": "An unexpected error occurred"
+}
+```
+
+### Error Handling for Clients
+
+Clients should:
+
+1. Always check for non-200 status codes
+2. Parse the `detail` field for a human-readable error message
+3. Check for an optional `errors` array for additional validation details
+4. Implement appropriate retry logic for 5xx errors
+5. Never retry on 4xx errors without fixing the request
+
+### Validation Errors
+
+For endpoints that require data validation, failed validations return a 422 status code with specific validation error messages. This is especially important for complex validations like password strength requirements.
+
+### Error Logging
+
+All errors are logged server-side with appropriate context and severity levels. Error logs include timestamps, request paths, error details, and when relevant, user identifiers for troubleshooting while maintaining privacy.
+
+### Internationalization
+
+Error messages are currently provided in English only. Future API versions may support localized error messages through Accept-Language headers.
+
 ## Development
 
 ### Running Tests
