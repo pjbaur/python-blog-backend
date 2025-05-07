@@ -130,22 +130,22 @@ All error responses follow this JSON structure:
 
 The API uses the following standard HTTP status codes:
 
-| Status Code | Meaning | Common Scenarios |
-|-------------|---------|-----------------|
-| **2xx** | **Success** | |
-| 200 | OK | Successful GET, PUT, or POST when no resource is created |
-| 201 | Created | Successful resource creation via POST |
-| 204 | No Content | Successful DELETE |
-| **4xx** | **Client Errors** | |
-| 400 | Bad Request | Invalid request parameters or body |
-| 401 | Unauthorized | Missing or invalid authentication token |
-| 403 | Forbidden | Valid authentication but insufficient permissions |
-| 404 | Not Found | Resource not found |
-| 409 | Conflict | Resource already exists or state conflict |
-| 422 | Unprocessable Entity | Validation failure (e.g., password requirements) |
-| **5xx** | **Server Errors** | |
-| 500 | Internal Server Error | Unexpected server-side error |
-| 503 | Service Unavailable | Server temporarily unavailable |
+| Status Code | Meaning               | Common Scenarios                                         |
+|-------------|-----------------------|----------------------------------------------------------|
+| **2xx**     | **Success**           |                                                          |
+| 200         | OK                    | Successful GET, PUT, or POST when no resource is created |
+| 201         | Created               | Successful resource creation via POST                    |
+| 204         | No Content            | Successful DELETE                                        |
+| **4xx**     | **Client Errors**     |                                                          |
+| 400         | Bad Request           | Invalid request parameters or body                       |
+| 401         | Unauthorized          | Missing or invalid authentication token                  |
+| 403         | Forbidden             | Valid authentication but insufficient permissions        |
+| 404         | Not Found             | Resource not found                                       |
+| 409         | Conflict              | Resource already exists or state conflict                |
+| 422         | Unprocessable Entity  | Validation failure (e.g., password requirements)         |
+| **5xx**     | **Server Errors**     |                                                          |
+| 500         | Internal Server Error | Unexpected server-side error                             |
+| 503         | Service Unavailable   | Server temporarily unavailable                           |
 
 ### Common Error Scenarios
 
